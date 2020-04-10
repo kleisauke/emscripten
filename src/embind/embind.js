@@ -13,7 +13,7 @@
 /*jslint sub:true*/ /* The symbols 'fromWireType' and 'toWireType' must be accessed via array notation to be closure-safe since craftInvokerFunction crafts functions as strings that can't be closured. */
 
 // -- jshint doesn't understand library syntax, so we need to specifically tell it about the symbols we define
-/*global typeDependencies, flushPendingDeletes, getTypeName, getBasestPointer, throwBindingError, UnboundTypeError, embindRepr, registeredInstances, registeredTypes, getShiftFromSize*/
+/*global typeDependencies, setAutoDeleteLater, flushPendingDeletes, getTypeName, getBasestPointer, throwBindingError, UnboundTypeError, embindRepr, registeredInstances, registeredTypes, getShiftFromSize*/
 /*global ensureOverloadTable, embind__requireFunction, awaitingDependencies, makeLegalFunctionName, embind_charCodes:true, registerType, createNamedFunction, RegisteredPointer, throwInternalError*/
 /*global simpleReadValueFromPointer, floatReadValueFromPointer, integerReadValueFromPointer, enumReadValueFromPointer, replacePublicSymbol, craftInvokerFunction, tupleRegistrations*/
 /*global finalizationRegistry, attachFinalizer, detachFinalizer, releaseClassHandle, runDestructor*/
@@ -41,11 +41,12 @@ var LibraryEmbind = {
 
   $init_embind__deps: [
     '$getInheritedInstanceCount', '$getLiveInheritedInstances',
-    '$flushPendingDeletes', '$setDelayFunction'],
+    '$setAutoDeleteLater', '$flushPendingDeletes', '$setDelayFunction'],
   $init_embind__postset: 'init_embind();',
   $init_embind: function() {
     Module['getInheritedInstanceCount'] = getInheritedInstanceCount;
     Module['getLiveInheritedInstances'] = getLiveInheritedInstances;
+    Module['setAutoDeleteLater'] = setAutoDeleteLater;
     Module['flushPendingDeletes'] = flushPendingDeletes;
     Module['setDelayFunction'] = setDelayFunction;
   },
@@ -1753,15 +1754,25 @@ var LibraryEmbind = {
     }
   },
 
+  $autoDeleteLater: false,
+
+  $setAutoDeleteLater__deps: ['$autoDeleteLater'],
+  $setAutoDeleteLater: function(enable) {
+    autoDeleteLater = enable;
+  },
+
   $finalizationRegistry: false,
 
   $detachFinalizer_deps: ['$finalizationRegistry'],
   $detachFinalizer: function(handle) {},
 
-  $attachFinalizer__deps: ['$finalizationRegistry', '$detachFinalizer',
+  $attachFinalizer__deps: ['$autoDeleteLater', '$finalizationRegistry', '$detachFinalizer',
                            '$releaseClassHandle', '$RegisteredPointer_fromWireType'],
   $attachFinalizer: function(handle) {
-    if ('undefined' === typeof FinalizationRegistry) {
+    if (autoDeleteLater) {
+      attachFinalizer = (handle) => handle['deleteLater']();
+      return attachFinalizer(handle);
+    } else if ('undefined' === typeof FinalizationRegistry) {
       attachFinalizer = (handle) => handle;
       return handle;
     }
