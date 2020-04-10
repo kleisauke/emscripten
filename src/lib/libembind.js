@@ -1362,19 +1362,29 @@ var LibraryEmbind = {
     }
   },
 
+  $autoDeleteLater: false,
+
+  $setAutoDeleteLater__deps: ['$autoDeleteLater'],
+  $setAutoDeleteLater: (enable) => {
+    autoDeleteLater = enable;
+  },
+
   $finalizationRegistry: false,
 
   $detachFinalizer_deps: ['$finalizationRegistry'],
   $detachFinalizer: (handle) => {},
 
   $attachFinalizer__deps: [
-    '$finalizationRegistry', '$detachFinalizer', '$releaseClassHandle',
+    '$autoDeleteLater', '$finalizationRegistry', '$detachFinalizer', '$releaseClassHandle',
 #if ASSERTIONS
     '$RegisteredPointer_fromWireType'
 #endif
   ],
   $attachFinalizer: (handle) => {
-    if (!globalThis.FinalizationRegistry) {
+    if (autoDeleteLater) {
+      attachFinalizer = (handle) => handle['deleteLater']();
+      return attachFinalizer(handle);
+    } else if (!globalThis.FinalizationRegistry) {
       attachFinalizer = (handle) => handle;
       return handle;
     }
