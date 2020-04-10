@@ -1363,13 +1363,22 @@ var LibraryEmbind = {
     }
   },
 
+  $autoDeleteLater: false,
+
+  $setAutoDeleteLater: (enable) => {
+    autoDeleteLater = enable;
+  },
+
   $finalizationRegistry: false,
 
   $detachFinalizer__deps: ['$finalizationRegistry'],
   $detachFinalizer: (handle) => {},
 
   $attachFinalizer: (handle) => {
-    if (!globalThis.FinalizationRegistry) {
+    if (autoDeleteLater) {
+      attachFinalizer = (handle) => handle['deleteLater']();
+      return attachFinalizer(handle);
+    } else if (!globalThis.FinalizationRegistry) {
       attachFinalizer = (handle) => handle;
       return handle;
     }
