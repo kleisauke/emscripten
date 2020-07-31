@@ -296,21 +296,48 @@ struct BindingType<bool> {
 };
 
 template<typename T>
-struct BindingType<std::basic_string<T>> {
+    struct BindingType<std::basic_string<T>,
+    typename std::enable_if<std::is_trivially_copyable<T>::value>::type> {
     using String = std::basic_string<T>;
-    static_assert(std::is_trivially_copyable<T>::value, "basic_string elements are memcpy'd");
-    typedef struct {
+    struct StringStruct {
         size_t length;
         T data[1]; // trailing data
-    }* WireType;
+    };
+    static_assert(offsetof(StringStruct, data) == sizeof(size_t),
+        "Unexpected padding");
+    using WireType = StringStruct *;
+
     static WireType toWireType(const String& v, rvp::default_tag) {
         WireType wt = (WireType)malloc(sizeof(size_t) + v.length() * sizeof(T));
         wt->length = v.length();
-        memcpy(wt->data, v.data(), v.length() * sizeof(T));
+        std::copy(v.begin(), v.end(), wt->data);
         return wt;
     }
     static String fromWireType(WireType v) {
         return String(v->data, v->length);
+    }
+};
+
+template<typename T>
+struct BindingType<std::vector<T>,
+  typename std::enable_if<std::is_arithmetic<T>::value>::type> {
+    using Vector = std::vector<T>;
+    struct VectorStruct {
+        size_t length;
+        T data[1]; // trailing data
+    };
+    static_assert(offsetof(VectorStruct, data) == (sizeof(size_t) > sizeof(T) ? sizeof(size_t) : sizeof(T)),
+        "Unexpected padding");
+    using WireType = VectorStruct *;
+
+    static WireType toWireType(const Vector& v, rvp::default_tag) {
+        WireType wt = (WireType)malloc(offsetof(VectorStruct, data) + v.size() * sizeof(T));
+        wt->length = v.size();
+        std::copy(v.begin(), v.end(), wt->data);
+        return wt;
+    }
+    static Vector fromWireType(WireType v) {
+        return Vector(v->data, v->data + v->length);
     }
 };
 
