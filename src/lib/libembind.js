@@ -200,6 +200,36 @@ var LibraryEmbind = {
     return sharedRegisterType(rawType, registeredInstance, options);
   },
 
+  $getFloatHeap__deps: [],
+  $getFloatHeap: (name, width) => {
+    switch (width) {
+      case 4:
+        return HEAPF32;
+      case 8:
+        return HEAPF64;
+      default:
+        throw new TypeError(`invalid float width (${width}): ${name}`);
+    }
+  },
+
+  $getIntegerHeap__deps: [],
+  $getIntegerHeap: (name, width, signed) => {
+    switch (width) {
+      case 1:
+        return signed ? HEAP8 : HEAPU8;
+      case 2:
+        return signed ? HEAP16 : HEAPU16;
+      case 4:
+        return signed ? HEAP32 : HEAPU32;
+#if WASM_BIGINT
+      case 8:
+        return signed ? HEAP64 : HEAPU64;
+#endif
+      default:
+        throw new TypeError(`invalid integer width (${width}): ${name}`);
+    }
+  },
+
   _embind_register_void__deps: ['$AsciiToString', '$registerType'],
   _embind_register_void: (rawType, name) => {
     name = AsciiToString(name);
@@ -420,7 +450,7 @@ var LibraryEmbind = {
 
   $readPointer__docs: '/** @suppress {globalThis} */',
   $readPointer: function(pointer) {
-    return this.fromWireType({{{ makeGetValue('pointer', '0', '*') }}});
+    return this.fromWireType({{{ makeGetValue('pointer', 0, '*') }}});
   },
 
   _embind_register_std_string__deps: [
@@ -436,7 +466,7 @@ var LibraryEmbind = {
       // For some method names we use string keys here since they are part of
       // the public/external API and/or used by the runtime-generated code.
       fromWireType(value) {
-        var length = {{{ makeGetValue('value', '0', '*') }}};
+        var length = {{{ makeGetValue('value', 0, '*') }}};
         var payload = value + {{{ POINTER_SIZE }}};
 
         var str;
@@ -474,7 +504,7 @@ var LibraryEmbind = {
         // assumes POINTER_SIZE alignment
         var base = _malloc({{{ POINTER_SIZE }}} + length + 1);
         var ptr = base + {{{ POINTER_SIZE }}};
-        {{{ makeSetValue('base', '0', 'length', SIZE_TYPE) }}};
+        {{{ makeSetValue('base', 0, 'length', SIZE_TYPE) }}};
         if (valueIsOfTypeString) {
           if (stdStringIsUTF8) {
             stringToUTF8(value, ptr, length + 1);
@@ -543,7 +573,7 @@ var LibraryEmbind = {
         // assumes POINTER_SIZE alignment
         var length = lengthBytesUTF(value);
         var ptr = _malloc({{{ POINTER_SIZE }}} + length + charSize);
-        {{{ makeSetValue('ptr', '0', 'length / charSize', SIZE_TYPE) }}};
+        {{{ makeSetValue('ptr', 0, 'length / charSize', SIZE_TYPE) }}};
 
         encodeString(value, ptr + {{{ POINTER_SIZE }}}, length + charSize);
 
@@ -571,6 +601,61 @@ var LibraryEmbind = {
   _embind_register_optional__deps: ['$registerType', '$EmValOptionalType'],
   _embind_register_optional: (rawOptionalType, rawType) => {
     registerType(rawOptionalType, EmValOptionalType);
+  },
+
+  _embind_register_arithmetic_vector__deps: [
+    '$AsciiToString', '$registerType', '$getFloatHeap', '$getIntegerHeap',
+    '$readPointer', '$throwBindingError'],
+  _embind_register_arithmetic_vector: (rawType, name, elementSize, isfloat, signed) => {
+    name = AsciiToString(name);
+    var HEAP = isfloat ?
+      getFloatHeap(name, elementSize) :
+      getIntegerHeap(name, elementSize, signed);
+    var shift = Math.log2(elementSize);
+
+    registerType(rawType, {
+      name: name,
+      fromWireType: (value) => {
+        var length = {{{ makeGetValue('value', 0, '*') }}};
+
+        var ptr = (value + Math.max({{{ POINTER_SIZE }}}, elementSize)) >> shift;
+        var a = Array.from(HEAP.subarray(ptr, ptr + length));
+
+        _free(value);
+
+        return a;
+      },
+      toWireType: (destructors, value) => {
+        // We allow singular values as well
+        if (typeof value == 'number') {
+          value = [value];
+        }
+
+        if (!Array.isArray(value)) {
+          throwBindingError(`Cannot pass non-array to C++ vector type ${name}`);
+        }
+
+        // flatten 2D arrays
+        value = Array.prototype.concat.apply([], value);
+
+        var length = value.length;
+
+        var offset = Math.max({{{ POINTER_SIZE }}}, elementSize);
+        var base = _malloc(offset + length * elementSize);
+        var ptr = (base + offset) >> shift;
+        {{{ makeSetValue('base', 0, 'length', SIZE_TYPE) }}};
+        HEAP.set(value, ptr);
+
+        if (destructors !== null) {
+          destructors.push(_free, base);
+        }
+        return base;
+      },
+      readValueFromPointer: readPointer,
+      destructorFunction(ptr) {
+        _free(ptr);
+      }
+    });
   },
 
   _embind_register_memory_view__deps: ['$AsciiToString', '$registerType'],
