@@ -88,6 +88,13 @@ void _embind_register_std_wstring(
     size_t charSize,
     const char* name);
 
+void _embind_register_arithmetic_vector(
+    TYPEID vectorType,
+    const char *name,
+    size_t elementSize,
+    bool isFloat,
+    bool isSigned);
+
 void _embind_register_emval(
     TYPEID emvalType,
     const char* name);
@@ -1891,7 +1898,8 @@ struct VectorAccess {
 } // end namespace internal
 
 template<typename T>
-class_<std::vector<T>> register_vector(const char* name) {
+typename std::enable_if<!std::is_arithmetic<T>::value, class_<std::vector<T>>>::type
+register_vector(const char* name) {
     typedef std::vector<T> VecType;
 
     void (VecType::*push_back)(const T&) = &VecType::push_back;
@@ -1905,6 +1913,17 @@ class_<std::vector<T>> register_vector(const char* name) {
         .function("get", &internal::VectorAccess<VecType>::get)
         .function("set", &internal::VectorAccess<VecType>::set)
         ;
+}
+
+template<typename T>
+typename std::enable_if<std::is_arithmetic<T>::value, void>::type
+register_vector(const char* name) {
+    internal::_embind_register_arithmetic_vector(
+        internal::TypeID<std::vector<T>>::get(),
+        name,
+        sizeof(T),
+        std::is_floating_point<T>::value,
+        std::is_signed<T>::value);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
