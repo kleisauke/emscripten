@@ -287,9 +287,9 @@ struct BindingType<bool> {
 };
 
 template<typename T>
-struct BindingType<std::basic_string<T>> {
+struct BindingType<std::basic_string<T>,
+  typename std::enable_if<std::is_trivially_copyable<T>::value>::type> {
     using String = std::basic_string<T>;
-    static_assert(std::is_trivially_copyable<T>::value, "basic_string elements are memcpy'd");
     typedef struct {
         size_t length;
         T data[1]; // trailing data
@@ -302,6 +302,28 @@ struct BindingType<std::basic_string<T>> {
     }
     static String fromWireType(WireType v) {
         return String(v->data, v->length);
+    }
+};
+
+template<typename T>
+struct BindingType<std::vector<T>,
+  typename std::enable_if<std::is_arithmetic<T>::value>::type> {
+    using Vector = std::vector<T>;
+    struct VectorStruct {
+        size_t length;
+        T data[]; // Flexible array member
+    };
+    using WireType = VectorStruct *;
+
+    static WireType toWireType(const Vector& v) {
+        WireType wt =
+          (WireType)malloc(offsetof(struct VectorStruct, data) + v.size() * sizeof(T));
+        wt->length = v.size();
+        std::copy(v.begin(), v.end(), wt->data);
+        return wt;
+    }
+    static Vector fromWireType(WireType v) {
+        return Vector(v->data, v->data + v->length);
     }
 };
 
