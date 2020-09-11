@@ -3609,6 +3609,11 @@ window.close = function() {
       print('Test that everything works ok when we are on a pthread.')
       self.btest(path_from_root('tests', 'pthread', 'main_thread_%s.cpp' % name), expected='1', args=['-O3', '-s', 'USE_PTHREADS=1', '-s', 'PTHREAD_POOL_SIZE=1', '-s', 'PROXY_TO_PTHREAD', '-s', 'ALLOW_BLOCKING_ON_MAIN_THREAD=0'])
 
+  @requires_threads
+  def test_pthread_main_thread_blocking_async(self):
+    print('Test that std::async functions works fine, as long as it is compiled with a pool')
+    self.btest(path_from_root('tests', 'pthread', 'main_thread_async.cpp'), expected='1', args=['-O3', '-s', 'USE_PTHREADS=1', '-s', 'PTHREAD_POOL_SIZE=1', '-s', 'ALLOW_BLOCKING_ON_MAIN_THREAD=0'])
+
   # Test the old GCC atomic __sync_fetch_and_op builtin operations.
   @requires_threads
   def test_pthread_gcc_atomic_fetch_and_op(self):
