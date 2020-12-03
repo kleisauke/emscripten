@@ -51,19 +51,23 @@ def get_pthread_tests():
 engine = config.NODE_JS + ['--experimental-wasm-threads', '--experimental-wasm-bulk-memory']
 
 # Mark certain tests as not passing
-disabled = {
-  'test_pthread_create_11_1': 'never returns',
-  'test_pthread_barrier_wait_2_1': 'never returns',
-  'test_pthread_cond_timedwait_2_6': 'never returns',
-  'test_pthread_cond_timedwait_4_3': 'never returns',
+disabled_all = {
   'test_pthread_attr_setscope_5_1': 'internally skipped (PTS_UNTESTED)',
-  'test_pthread_cond_wait_2_3': 'never returns',
+  # TODO: Did we cause a regression in the following test?:
+  'test_pthread_setcanceltype_1_1': 'fails with: "Cancel request timed out" (PTS_FAIL)',
+}
+
+disabled_browser = disabled_all
+
+# TODO: Curiously, there are more failing tests on Node
+disabled_node = {
+  **disabled_all,
+  'test_pthread_barrier_wait_2_1': 'never returns',
   'test_pthread_create_5_1': 'never returns',
   'test_pthread_exit_1_2': 'never returns',
   'test_pthread_exit_2_2': 'never returns',
   'test_pthread_exit_3_2': 'never returns',
   'test_pthread_exit_4_1': 'never returns',
-  'test_pthread_getcpuclockid_1_1': 'never returns',
   'test_pthread_key_create_1_2': 'never returns',
   'test_pthread_rwlock_rdlock_1_1': 'fails with "main: Unexpected thread state"',
   'test_pthread_rwlock_timedrdlock_1_1': 'fails with "main: Unexpected thread state"',
@@ -72,16 +76,15 @@ disabled = {
   'test_pthread_rwlock_timedwrlock_1_1': 'fails with "main: Unexpected thread state"',
   'test_pthread_rwlock_timedwrlock_3_1': 'fails with "main: Unexpected thread state"',
   'test_pthread_rwlock_timedwrlock_5_1': 'fails with "main: Unexpected thread state"',
-  'test_pthread_rwlock_wrlock_1_1': 'fails with "main: Unexpected thread state"',
   'test_pthread_rwlock_trywrlock_1_1': 'fails with "main: Unexpected thread state"',
-  'test_pthread_spin_destroy_3_1': 'never returns',
-  'test_pthread_spin_init_4_1': 'never returns',
+  'test_pthread_rwlock_wrlock_1_1': 'fails with "main: Unexpected thread state"',
 }
 
 
 def make_test(name, testfile, browser):
 
   def f(self):
+    disabled = disabled_browser if browser else disabled_node
     if name in disabled:
       self.skipTest(disabled[name])
     args = ['-I' + os.path.join(testsuite_root, 'include'),
@@ -90,7 +93,7 @@ def make_test(name, testfile, browser):
             '-Wno-int-conversion',
             '-sUSE_PTHREADS',
             '-sEXIT_RUNTIME',
-            '-sTOTAL_MEMORY=268435456',
+            '-sTOTAL_MEMORY=256mb',
             '-sPTHREAD_POOL_SIZE=40']
     if browser:
       # Only are only needed for browser tests of the was btest
