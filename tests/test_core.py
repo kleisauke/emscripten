@@ -8056,6 +8056,7 @@ NODEFS is no longer included by default; build with -lnodefs.js
     self.do_run_in_out_file_test('tests', 'core', 'test_hello_world.c')
 
   @node_pthreads
+  @unittest.skip("this test can not be run without a pool, see test_pthread_create_pool")
   def test_pthread_create(self):
     self.do_run_in_out_file_test('tests', 'core', 'pthread', 'create.cpp')
 
@@ -8084,7 +8085,8 @@ NODEFS is no longer included by default; build with -lnodefs.js
   def test_pthread_create_embind_stack_check(self):
     # embind should work with stack overflow checks (see #12356)
     self.set_setting('STACK_OVERFLOW_CHECK', 2)
-    self.emcc_args += ['--bind']
+    self.set_setting('PTHREAD_POOL_SIZE', '2')
+    self.emcc_args += ['--bind', '-DALLOW_SYNC']
     self.do_run_in_out_file_test('tests', 'core', 'pthread', 'create.cpp')
 
   @node_pthreads
