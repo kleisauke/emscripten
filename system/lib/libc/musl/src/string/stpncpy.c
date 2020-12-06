@@ -29,4 +29,3 @@ tail:
 }
 
 weak_alias(__stpncpy, stpncpy);
-

@@ -144,6 +144,13 @@ static inline long double fp_barrierl(long double x)
 }
 #endif
 
+#ifdef __EMSCRIPTEN__
+/*
+ * wasm doesn't have user-accessible floating point exceptions, so there's
+ * no point in trying to force expression evaluations to produce them.
+ */
+#define FORCE_EVAL(x)
+#else
 /* fp_force_eval ensures that the input value is computed when that's
    otherwise unused.  To prevent the constant folding of the input
    expression, an additional fp_barrier may be needed or a compilation
@@ -186,6 +193,7 @@ static inline void fp_force_evall(long double x)
 		fp_force_evall(x);                \
 	}                                         \
 } while(0)
+#endif
 
 #define asuint(f) ((union{float _f; uint32_t _i;}){f})._i
 #define asfloat(i) ((union{uint32_t _i; float _f;}){i})._f

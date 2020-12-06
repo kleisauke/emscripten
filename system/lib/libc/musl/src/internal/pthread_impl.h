@@ -9,11 +9,23 @@
 #include "libc.h"
 #include "syscall.h"
 #include "atomic.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten/threading.h>
+#endif
 #include "futex.h"
 
 #define pthread __pthread
 
 struct pthread {
+// XXX Emscripten: Need some custom thread control structures.
+#ifdef __EMSCRIPTEN__
+	// Note: The specific order of these fields is important, since these are accessed
+	// by direct pointer arithmetic in worker.js.
+	int threadStatus; // 0: thread not exited, 1: exited.
+	int threadExitCode; // Thread exit code.
+	void *profilerBlock; // If --threadprofiler is enabled, this pointer is allocated to contain internal information about the thread state for profiling purposes.
+#endif
+
 	/* Part 1 -- these fields may be external or
 	 * internal (accessed via asm) ABI. Do not change. */
 	struct pthread *self;
@@ -91,6 +103,12 @@ struct __timer {
 #define _rw_lock __u.__vi[0]
 #define _rw_waiters __u.__vi[1]
 #define _rw_shared __u.__i[2]
+#ifdef __EMSCRIPTEN__
+// XXX Emscripten: The spec allows detecting when multiple write locks would deadlock, so use an extra field
+// _rw_wr_owner to record which thread owns the write lock in order to avoid hangs.
+// Points to the pthread that currently has the write lock.
+#define _rw_wr_owner __u.__vi[3]
+#endif
 #define _b_lock __u.__vi[0]
 #define _b_waiters __u.__vi[1]
 #define _b_limit __u.__i[2]
@@ -156,8 +174,12 @@ static inline void __wake(volatile void *addr, int cnt, int priv)
 {
 	if (priv) priv = FUTEX_PRIVATE;
 	if (cnt<0) cnt = INT_MAX;
+#ifdef __EMSCRIPTEN__
+	emscripten_futex_wake(addr, cnt);
+#else
 	__syscall(SYS_futex, addr, FUTEX_WAKE|priv, cnt) != -ENOSYS ||
 	__syscall(SYS_futex, addr, FUTEX_WAKE, cnt);
+#endif
 }
 static inline void __futexwait(volatile void *addr, int val, int priv)
 {
@@ -187,4 +209,10 @@ extern hidden unsigned __default_guardsize;
 
 #define __ATTRP_C11_THREAD ((void*)(uintptr_t)-1)
 
+#ifdef __EMSCRIPTEN__
+void __emscripten_init_pthread(pthread_t thread);
+#ifndef __EMSCRIPTEN_PTHREADS__
+pthread_t __emscripten_pthread_stub(void);
+#endif
+#endif
 #endif

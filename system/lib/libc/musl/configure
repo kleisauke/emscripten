@@ -338,6 +338,7 @@ powerpc*|ppc*) ARCH=powerpc ;;
 riscv64*) ARCH=riscv64 ;;
 sh[1-9bel-]*|sh|superh*) ARCH=sh ;;
 s390x*) ARCH=s390x ;;
+wasm32-unknown-emscripten) ARCH=emscripten ;;
 unknown) fail "$0: unable to detect target arch; try $0 --target=..." ;;
 *) fail "$0: unknown or unsupported target \"$target\"" ;;
 esac
@@ -395,7 +396,7 @@ tryflag CFLAGS_NOSSP -fno-stack-protector
 # option is sufficient, and if not, add a macro to cripple these
 # functions with volatile...
 #
-tryflag CFLAGS_MEMOPS -fno-tree-loop-distribute-patterns
+# XXX EMSCRIPTEN tryflag CFLAGS_MEMOPS -fno-tree-loop-distribute-patterns
 
 #
 # Enable debugging if requessted.
@@ -520,7 +521,7 @@ test "$cc_family" = clang && tryflag CFLAGS_AUTO -w
 #
 tryflag CFLAGS_AUTO -Werror=implicit-function-declaration
 tryflag CFLAGS_AUTO -Werror=implicit-int
-tryflag CFLAGS_AUTO -Werror=pointer-sign
+# XXX EMSCRIPTEN tryflag CFLAGS_AUTO -Werror=pointer-sign
 tryflag CFLAGS_AUTO -Werror=pointer-arith
 
 #

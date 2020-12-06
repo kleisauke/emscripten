@@ -19,6 +19,11 @@ static const float tiny = 1.0e-30;
 
 float sqrtf(float x)
 {
+// XXX EMSCRIPTEN: use the wasm instruction via clang builtin
+// See https://github.com/emscripten-core/emscripten/issues/9236
+#ifdef __wasm__
+	return __builtin_sqrtf(x);
+#else
 	float z;
 	int32_t sign = (int)0x80000000;
 	int32_t ix,s,q,m,t,i;
@@ -80,4 +85,5 @@ float sqrtf(float x)
 	ix = (q>>1) + 0x3f000000;
 	SET_FLOAT_WORD(z, ix + ((uint32_t)m << 23));
 	return z;
+#endif
 }

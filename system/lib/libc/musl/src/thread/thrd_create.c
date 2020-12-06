@@ -1,6 +1,11 @@
 #include "pthread_impl.h"
 #include <threads.h>
 
+// XXX Emscripten implements pthread_create directly rather than __pthread_create
+#ifdef __EMSCRIPTEN__
+#define __pthread_create pthread_create
+#endif
+
 int thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
 {
 	int ret = __pthread_create(thr, __ATTRP_C11_THREAD, (void *(*)(void *))func, arg);

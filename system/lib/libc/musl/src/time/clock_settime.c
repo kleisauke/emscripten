@@ -6,7 +6,11 @@
 
 int clock_settime(clockid_t clk, const struct timespec *ts)
 {
-#ifdef SYS_clock_settime64
+#ifdef __EMSCRIPTEN__
+	// JS and wasm VMs do not allow setting the time.
+	errno = EPERM;
+	return -1;
+#elif defined(SYS_clock_settime64) // XXX EMSCRIPTEN replace #ifdef SYS_clock_settime64
 	time_t s = ts->tv_sec;
 	long ns = ts->tv_nsec;
 	int r = -ENOSYS;

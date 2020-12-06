@@ -26,6 +26,17 @@ hidden long __syscall_ret(unsigned long),
 	__syscall_cp(syscall_arg_t, syscall_arg_t, syscall_arg_t, syscall_arg_t,
 	             syscall_arg_t, syscall_arg_t, syscall_arg_t);
 
+#ifdef __EMSCRIPTEN__
+#define __syscall_emscripten(n, ...) __syscall##n(__VA_ARGS__)
+#define __syscall_emscripten0(n) __syscall_emscripten(n)
+#define __syscall_emscripten1(n,a) __syscall_emscripten(n,__scc(a))
+#define __syscall_emscripten2(n,a,b) __syscall_emscripten(n,__scc(a),__scc(b))
+#define __syscall_emscripten3(n,a,b,c) __syscall_emscripten(n,__scc(a),__scc(b),__scc(c))
+#define __syscall_emscripten4(n,a,b,c,d) __syscall_emscripten(n,__scc(a),__scc(b),__scc(c),__scc(d))
+#define __syscall_emscripten5(n,a,b,c,d,e) __syscall_emscripten(n,__scc(a),__scc(b),__scc(c),__scc(d),__scc(e))
+#define __syscall_emscripten6(n,a,b,c,d,e,f) __syscall_emscripten(n,__scc(a),__scc(b),__scc(c),__scc(d),__scc(e),__scc(f))
+#define __syscall_emscripten7(n,a,b,c,d,e,f,g) __syscall_emscripten(n,__scc(a),__scc(b),__scc(c),__scc(d),__scc(e),__scc(f),__scc(g))
+#else // !defined(__EMSCRIPTEN__)
 #define __syscall1(n,a) __syscall1(n,__scc(a))
 #define __syscall2(n,a,b) __syscall2(n,__scc(a),__scc(b))
 #define __syscall3(n,a,b,c) __syscall3(n,__scc(a),__scc(b),__scc(c))
@@ -33,6 +44,7 @@ hidden long __syscall_ret(unsigned long),
 #define __syscall5(n,a,b,c,d,e) __syscall5(n,__scc(a),__scc(b),__scc(c),__scc(d),__scc(e))
 #define __syscall6(n,a,b,c,d,e,f) __syscall6(n,__scc(a),__scc(b),__scc(c),__scc(d),__scc(e),__scc(f))
 #define __syscall7(n,a,b,c,d,e,f,g) __syscall7(n,__scc(a),__scc(b),__scc(c),__scc(d),__scc(e),__scc(f),__scc(g))
+#endif // !defined(__EMSCRIPTEN__)
 
 #define __SYSCALL_NARGS_X(a,b,c,d,e,f,g,h,n,...) n
 #define __SYSCALL_NARGS(...) __SYSCALL_NARGS_X(__VA_ARGS__,7,6,5,4,3,2,1,0,)
@@ -40,12 +52,21 @@ hidden long __syscall_ret(unsigned long),
 #define __SYSCALL_CONCAT(a,b) __SYSCALL_CONCAT_X(a,b)
 #define __SYSCALL_DISP(b,...) __SYSCALL_CONCAT(b,__SYSCALL_NARGS(__VA_ARGS__))(__VA_ARGS__)
 
+#ifdef __EMSCRIPTEN__
+#define __syscall(...) __SYSCALL_DISP(__syscall_emscripten,__VA_ARGS__)
+#else
 #define __syscall(...) __SYSCALL_DISP(__syscall,__VA_ARGS__)
+#endif
+
 #define syscall(...) __syscall_ret(__syscall(__VA_ARGS__))
 
 #define socketcall(nm,a,b,c,d,e,f) __syscall_ret(__socketcall(nm,a,b,c,d,e,f))
 #define socketcall_cp(nm,a,b,c,d,e,f) __syscall_ret(__socketcall_cp(nm,a,b,c,d,e,f))
 
+#ifdef __EMSCRIPTEN__
+#define __syscall_cp(...) __syscall(__VA_ARGS__)
+#define SYSCALL_USE_SOCKETCALL
+#else // !defined(__EMSCRIPTEN__)
 #define __syscall_cp0(n) (__syscall_cp)(n,0,0,0,0,0,0)
 #define __syscall_cp1(n,a) (__syscall_cp)(n,__scc(a),0,0,0,0,0)
 #define __syscall_cp2(n,a,b) (__syscall_cp)(n,__scc(a),__scc(b),0,0,0,0)
@@ -55,6 +76,8 @@ hidden long __syscall_ret(unsigned long),
 #define __syscall_cp6(n,a,b,c,d,e,f) (__syscall_cp)(n,__scc(a),__scc(b),__scc(c),__scc(d),__scc(e),__scc(f))
 
 #define __syscall_cp(...) __SYSCALL_DISP(__syscall_cp,__VA_ARGS__)
+#endif // !defined(__EMSCRIPTEN__)
+
 #define syscall_cp(...) __syscall_ret(__syscall_cp(__VA_ARGS__))
 
 #ifndef SYSCALL_USE_SOCKETCALL
@@ -359,6 +382,12 @@ hidden long __syscall_ret(unsigned long),
 #define SIOCGSTAMPNS_OLD 0x8907
 #endif
 
+#ifdef __EMSCRIPTEN__
+#define __sys_open2(x,pn,fl) __SYSCALL_CONCAT(__syscall, SYS_open)(__scc(pn), __scc((fl)|O_LARGEFILE))
+#define __sys_open3(x,pn,fl,mo) __SYSCALL_CONCAT(__syscall, SYS_open)(__scc(pn), __scc((fl)|O_LARGEFILE), __scc(mo))
+#define __sys_open_cp2(x,pn,fl) __SYSCALL_CONCAT(__syscall, SYS_open)(__scc(pn), __scc((fl)|O_LARGEFILE))
+#define __sys_open_cp3(x,pn,fl,mo) __SYSCALL_CONCAT(__syscall, SYS_open)(__scc(pn), __scc((fl)|O_LARGEFILE), __scc(mo))
+#else // !defined(__EMSCRIPTEN__)
 #ifdef SYS_open
 #define __sys_open2(x,pn,fl) __syscall2(SYS_open, pn, (fl)|O_LARGEFILE)
 #define __sys_open3(x,pn,fl,mo) __syscall3(SYS_open, pn, (fl)|O_LARGEFILE, mo)
@@ -370,6 +399,7 @@ hidden long __syscall_ret(unsigned long),
 #define __sys_open_cp2(x,pn,fl) __syscall_cp3(SYS_openat, AT_FDCWD, pn, (fl)|O_LARGEFILE)
 #define __sys_open_cp3(x,pn,fl,mo) __syscall_cp4(SYS_openat, AT_FDCWD, pn, (fl)|O_LARGEFILE, mo)
 #endif
+#endif // !defined(__EMSCRIPTEN__)
 
 #define __sys_open(...) __SYSCALL_DISP(__sys_open,,__VA_ARGS__)
 #define sys_open(...) __syscall_ret(__sys_open(__VA_ARGS__))
