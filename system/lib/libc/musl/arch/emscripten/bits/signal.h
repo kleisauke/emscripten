@@ -28,12 +28,6 @@
 #define REG_SS          18
 #endif
 
-struct sigaltstack {
-	void *ss_sp;
-	int ss_flags;
-	size_t ss_size;
-};
-
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 typedef int greg_t, gregset_t[19];
 typedef struct _fpstate {
@@ -63,6 +57,12 @@ typedef struct {
 	unsigned __space[22];
 } mcontext_t;
 #endif
+
+struct sigaltstack {
+	void *ss_sp;
+	int ss_flags;
+	size_t ss_size;
+};
 
 typedef struct __ucontext {
 	unsigned long uc_flags;
