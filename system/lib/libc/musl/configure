@@ -222,8 +222,8 @@ trap 'rm "$tmpc"' EXIT INT QUIT TERM HUP
 #
 # Check that the requested malloc implementation exists
 #
-test -d "$srcdir/src/malloc/$malloc_dir" \
-|| fail "$0: error: chosen malloc implementation '$malloc_dir' does not exist"
+# XXX EMSCRIPTEN test -d "$srcdir/src/malloc/$malloc_dir" \
+# XXX EMSCRIPTEN || fail "$0: error: chosen malloc implementation '$malloc_dir' does not exist"
 
 #
 # Check whether we are cross-compiling, and set a default
