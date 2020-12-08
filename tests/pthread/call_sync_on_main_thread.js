@@ -21,9 +21,9 @@ mergeInto(LibraryManager.library, {
     return typeof ENVIRONMENT_IS_WORKER !== 'undefined' && ENVIRONMENT_IS_WORKER;
   },
 
-  isThisInWorkerOnMainThread__proxy: 'sync',
-  isThisInWorkerOnMainThread__sig: 'i',
-  isThisInWorkerOnMainThread: function() {
-    return typeof ENVIRONMENT_IS_WORKER !== 'undefined' && ENVIRONMENT_IS_WORKER;
+  isThisOnMainRuntimeThread__proxy: 'sync',
+  isThisOnMainRuntimeThread__sig: 'i',
+  isThisOnMainRuntimeThread: function() {
+    return typeof ENVIRONMENT_IS_WORKER === 'undefined' || !ENVIRONMENT_IS_WORKER;
   }
 });

@@ -11,9 +11,9 @@ var LibraryPThreadStub = {
 
   emscripten_is_main_browser_thread: function() {
 #if MINIMAL_RUNTIME
-    return typeof importScripts === 'undefined';
+    return typeof window === 'object';
 #else
-    return !ENVIRONMENT_IS_WORKER;
+    return ENVIRONMENT_IS_WEB;
 #endif
   },
 

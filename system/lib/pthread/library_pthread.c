@@ -129,7 +129,7 @@ void emscripten_thread_sleep(double msecs) {
   // If we have less than this many msecs left to wait, busy spin that instead.
   const double minimumTimeSliceToSleep = 0.1;
 
-  // main thread may need to run proxied calls, so sleep in very small slices to be responsive.
+  // main browser thread may need to run proxied calls, so sleep in very small slices to be responsive.
   const double maxMsecsSliceToSleep = emscripten_is_main_browser_thread() ? 1 : 100;
 
   emscripten_conditional_set_current_thread_status(
