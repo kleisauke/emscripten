@@ -391,7 +391,7 @@ function exit(status, implicit) {
       throw new ExitStatus(status);
     } else {
 #if ASSERTIONS
-      err('main thead called exit: noExitRuntime=' + noExitRuntime);
+      err('main thread called exit: noExitRuntime=' + noExitRuntime);
 #endif
     }
   }

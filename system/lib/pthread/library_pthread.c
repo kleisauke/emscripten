@@ -42,8 +42,6 @@ char* gets(char*);
 // Extra pthread_attr_t field:
 #define _a_transferredcanvases __u.__s[9]
 
-void __pthread_testcancel();
-
 int emscripten_pthread_attr_gettransferredcanvases(const pthread_attr_t* a, const char** str) {
   *str = (const char*)a->_a_transferredcanvases;
   return 0;
@@ -52,17 +50,6 @@ int emscripten_pthread_attr_gettransferredcanvases(const pthread_attr_t* a, cons
 int emscripten_pthread_attr_settransferredcanvases(pthread_attr_t* a, const char* str) {
   a->_a_transferredcanvases = (int)str;
   return 0;
-}
-
-int _pthread_getcanceltype() { return pthread_self()->cancelasync; }
-
-static void inline __pthread_mutex_locked(pthread_mutex_t* mutex) {
-  // The lock is now ours, mark this thread as the owner of this lock.
-  assert(mutex);
-  assert(mutex->_m_lock == 0);
-  mutex->_m_lock = pthread_self()->tid;
-  if (_pthread_getcanceltype() == PTHREAD_CANCEL_ASYNCHRONOUS)
-    __pthread_testcancel();
 }
 
 int sched_get_priority_max(int policy) {
@@ -85,34 +72,24 @@ int sched_get_priority_min(int policy) {
     return 0;
 }
 
-int pthread_setcancelstate(int new, int* old) {
-  if (new > 1U)
-    return EINVAL;
-  struct pthread* self = pthread_self();
-  if (old)
-    *old = self->canceldisable;
-  self->canceldisable = new;
-  return 0;
+void __block_app_sigs(void *set)
+{
+  // no-op
+  (void)set;
 }
 
-int _pthread_isduecanceled(struct pthread* pthread_ptr) {
-  return pthread_ptr->threadStatus == 2 /*canceled*/;
-}
-
-void __pthread_testcancel() {
-  struct pthread* self = pthread_self();
-  if (self->canceldisable)
-    return;
-  if (_pthread_isduecanceled(self)) {
-    EM_ASM(throw 'Canceled!');
-  }
+void __restore_sigs(void *set)
+{
+  // no-op
+  (void)set;
 }
 
 int pthread_getattr_np(pthread_t t, pthread_attr_t* a) {
   *a = (pthread_attr_t){0};
-  a->_a_detach = !!t->detached;
+  a->_a_detach = t->detach_state>=DT_DETACHED;
   a->_a_stackaddr = (uintptr_t)t->stack;
-  a->_a_stacksize = t->stack_size - DEFAULT_STACK_SIZE;
+  a->_a_stacksize = t->stack_size;
+  a->_a_guardsize = t->guard_size;
   return 0;
 }
 
@@ -129,7 +106,7 @@ void emscripten_thread_sleep(double msecs) {
   // If we have less than this many msecs left to wait, busy spin that instead.
   const double minimumTimeSliceToSleep = 0.1;
 
-  // main browser thread may need to run proxied calls, so sleep in very small slices to be responsive.
+  // Main browser thread may need to run proxied calls, so sleep in very small slices to be responsive.
   const double maxMsecsSliceToSleep = emscripten_is_main_browser_thread() ? 1 : 100;
 
   emscripten_conditional_set_current_thread_status(
@@ -953,5 +930,3 @@ int proxy_main(int argc, char** argv) {
     return __call_main(_main_arguments.argc, _main_arguments.argv);
   }
 }
-
-weak_alias(__pthread_testcancel, pthread_testcancel);

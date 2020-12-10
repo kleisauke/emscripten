@@ -604,6 +604,7 @@ class NoExceptLibrary(Library):
 
 class MuslInternalLibrary(Library):
   includes = [
+    ['system', 'lib', 'libc', 'musl', 'src', 'include'],
     ['system', 'lib', 'libc', 'musl', 'src', 'internal'],
   ]
 
@@ -690,9 +691,10 @@ class libc(AsanInstrumentedLibrary, MuslInternalLibrary, MTLibrary):
         'gethostbyname2_r.c', 'gethostbyname_r.c', 'gethostbyname2.c',
         'alarm.c', 'syscall.c', '_exit.c', 'popen.c',
         'getgrouplist.c', 'initgroups.c', 'wordexp.c', 'timer_create.c',
-        'faccessat.c',
+        'faccessat.c', 'fopencookie.c', 'getentropy.c',
         # 'process' exclusion
-        'fork.c', 'vfork.c', 'posix_spawn.c', 'execve.c', 'waitid.c', 'system.c'
+        'fork.c', 'vfork.c', 'posix_spawn.c', 'execve.c', 'fexecve.c', 
+        'waitid.c', 'system.c'
     ]
 
     ignore += LIBC_SOCKETS
@@ -734,7 +736,8 @@ class libc(AsanInstrumentedLibrary, MuslInternalLibrary, MTLibrary):
     # Allowed files from ignored modules
     libc_files += files_in_path(
         path_components=['system', 'lib', 'libc', 'musl', 'src', 'time'],
-        filenames=['clock_settime.c', 'asctime.c', 'ctime.c', 'gmtime.c', 'localtime.c', 'nanosleep.c'])
+        filenames=['clock_settime.c', 'asctime.c', 'ctime.c', 'gmtime.c', 'localtime.c', 'nanosleep.c',
+                   '__map_file.c'])
     libc_files += files_in_path(
         path_components=['system', 'lib', 'libc', 'musl', 'src', 'legacy'],
         filenames=['getpagesize.c', 'err.c'])
@@ -772,6 +775,9 @@ class libc(AsanInstrumentedLibrary, MuslInternalLibrary, MTLibrary):
       libc_files += files_in_path(
         path_components=['system', 'lib', 'libc', 'musl', 'src', 'thread'],
         filenames=[
+          # TODO(kleisauke): Perhaps we should transform this allow list to a deny list?
+          'lock_ptc.c', 'default_attr.c', 'pthread_join.c',
+          'pthread_cancel.c', 'pthread_testcancel.c', 'pthread_detach.c',
           'pthread_attr_destroy.c', 'pthread_condattr_setpshared.c',
           'pthread_mutex_lock.c', 'pthread_spin_destroy.c', 'pthread_attr_get.c',
           'pthread_cond_broadcast.c', 'pthread_mutex_setprioceiling.c',

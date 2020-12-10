@@ -1,7 +1,11 @@
 #ifndef STRING_H
 #define STRING_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/string.h"
+#else
 #include "../../include/string.h"
+#endif
 
 hidden void *__memrchr(const void *, int, size_t);
 hidden char *__stpcpy(char *, const char *);

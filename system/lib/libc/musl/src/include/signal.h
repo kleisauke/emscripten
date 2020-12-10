@@ -1,7 +1,11 @@
 #ifndef SIGNAL_H
 #define SIGNAL_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/signal.h"
+#else
 #include "../../include/signal.h"
+#endif
 
 hidden int __sigaction(int, const struct sigaction *, struct sigaction *);
 

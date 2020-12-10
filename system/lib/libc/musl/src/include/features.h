@@ -1,7 +1,11 @@
 #ifndef FEATURES_H
 #define FEATURES_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/features.h"
+#else
 #include "../../include/features.h"
+#endif
 
 #define weak __attribute__((__weak__))
 #define hidden __attribute__((__visibility__("hidden")))

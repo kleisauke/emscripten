@@ -1,7 +1,11 @@
 #ifndef UNISTD_H
 #define UNISTD_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/unistd.h"
+#else
 #include "../../include/unistd.h"
+#endif
 
 extern char **__environ;
 

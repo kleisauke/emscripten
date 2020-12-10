@@ -1,7 +1,11 @@
 #ifndef TIME_H
 #define TIME_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/time.h"
+#else
 #include "../../include/time.h"
+#endif
 
 hidden int __clock_gettime(clockid_t, struct timespec *);
 hidden int __clock_nanosleep(clockid_t, int, const struct timespec *, struct timespec *);

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <wasi/api.h>
 
-__attribute__((weak)) void __wasm_call_ctors(void);
+weak void __wasm_call_ctors(void);
 
 int __original_main(void);
 

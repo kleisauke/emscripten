@@ -1,7 +1,11 @@
 #ifndef CRYPT_H
 #define CRYPT_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/crypt.h"
+#else
 #include "../../include/crypt.h"
+#endif
 
 #include <features.h>
 

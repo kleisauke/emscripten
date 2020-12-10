@@ -102,6 +102,8 @@ extern struct ps_strings *__ps_strings;
 #endif
 
 #if SANITIZER_EMSCRIPTEN
+// XXX Emscripten this must be defined before including the internal syscall.h header from musl
+#define hidden __attribute__((__visibility__("hidden")))
 #include <syscall.h>
 #include <emscripten/threading.h>
 #include <math.h>

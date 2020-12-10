@@ -33,6 +33,7 @@ struct statx {
 	uint64_t spare[14];
 };
 
+#ifndef __EMSCRIPTEN__ // XXX Emscripten statx syscall unsupported
 static int fstatat_statx(int fd, const char *restrict path, struct stat *restrict st, int flag)
 {
 	struct statx stx;
@@ -68,6 +69,7 @@ static int fstatat_statx(int fd, const char *restrict path, struct stat *restric
 	};
 	return 0;
 }
+#endif
 
 static int fstatat_kstat(int fd, const char *restrict path, struct stat *restrict st, int flag)
 {
@@ -134,10 +136,12 @@ static int fstatat_kstat(int fd, const char *restrict path, struct stat *restric
 int fstatat(int fd, const char *restrict path, struct stat *restrict st, int flag)
 {
 	int ret;
+#ifndef __EMSCRIPTEN__ // XXX Emscripten statx syscall unsupported
 	if (sizeof((struct kstat){0}.st_atime_sec) < sizeof(time_t)) {
 		ret = fstatat_statx(fd, path, st, flag);
 		if (ret!=-ENOSYS) return __syscall_ret(ret);
 	}
+#endif
 	ret = fstatat_kstat(fd, path, st, flag);
 	return __syscall_ret(ret);
 }

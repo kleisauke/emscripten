@@ -1525,27 +1525,37 @@
             ]
     },
     {
+        // NOTE: This include directive is required for the internal pthread_impl.h and libc.h header from musl.
+        "file": "../lib/libc/musl/src/include/features.h"
+    },
+    {
         "file": "../lib/libc/musl/src/internal/pthread_impl.h",
         "structs": {
             "pthread": [
-              "threadStatus",
-              "threadExitCode",
               "profilerBlock",
               "self",
-              "tsd",
-              "tsd_used",
-              "detached",
-              "stack",
-              "stack_size",
-              "attr",
-              "robust_list",
+              "prev",
+              "next",
               "tid",
+              "detach_state",
+              "cancel",
               "canceldisable",
               "cancelasync",
+              "tsd_used",
+              "stack",
+              "stack_size",
+              "result",
+              "tsd",
+              "robust_list",
               "locale"
             ]
         },
-        "defines": ["__ATTRP_C11_THREAD"]
+        "defines": [
+            "__ATTRP_C11_THREAD",
+            "DT_EXITING",
+            "DT_JOINABLE",
+            "DT_DETACHED"
+        ]
     },
     {
         "file": "../lib/libc/musl/src/internal/libc.h",

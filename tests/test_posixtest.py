@@ -7,6 +7,14 @@
    ./tests/third_party/posixtestsuite
 See
    https://github.com/juj/posixtestsuite
+
+Verify that it runs properly in musl:
+   cd ./tests/third_party/posixtestsuite
+   docker run -v $(pwd):/app -w /app -it alpine:latest \
+      apk add build-base && \
+      POSIX_TARGET=conformance/interfaces/pthread_join make LDFLAGS='-pthread'
+
+Where [INTERFACE_DIR] is for e.g.: pthread_join
 """
 
 import glob
@@ -53,9 +61,17 @@ engine = config.NODE_JS + ['--experimental-wasm-threads', '--experimental-wasm-b
 # Mark certain tests as not passing
 disabled = {
   'test_pthread_attr_setscope_5_1': 'internally skipped (PTS_UNTESTED)',
-  # TODO: Did we cause a regression in the following tests?:
-  'test_pthread_setcanceltype_1_1': 'fails with: "Cancel request timed out" (PTS_FAIL)',
-  'test_pthread_cond_signal_1_1': 'fails with a nonzero exit code (flaky)'
+  # TODO(kleisauke): Could we mimic the scheduling policy somehow?
+  'test_pthread_attr_setinheritsched_2_3': 'scheduling policy/parameters unsupported',
+  'test_pthread_attr_setinheritsched_2_4': 'scheduling policy/parameters unsupported',
+  'test_pthread_attr_setschedparam_1_3': 'scheduling policy/parameters unsupported',
+  'test_pthread_attr_setschedparam_1_4': 'scheduling policy/parameters unsupported',
+  'test_pthread_create_3_2': 'scheduling policy/parameters unsupported',
+  'test_pthread_getschedparam_1_3': 'scheduling policy/parameters unsupported',
+  # TODO(kleisauke): Did we cause a regression in the following tests?
+  'test_pthread_cond_signal_1_1': 'fails with a nonzero exit code (flaky)',
+  'test_pthread_cond_timedwait_2_6': 'fails with: "The child did not own the mutex inside the cleanup handler" (PTS_FAIL)',
+  'test_pthread_cond_wait_2_3': 'fails with: "The child did not own the mutex inside the cleanup handler" (PTS_FAIL)',
 }
 
 
@@ -65,6 +81,15 @@ def make_test(name, testfile, browser):
     if name in disabled:
       self.skipTest(disabled[name])
     args = ['-I' + os.path.join(testsuite_root, 'include'),
+            # TODO(kleisauke): Run with ASan. Note that this requires matching signatures, i.e:
+            # void *thread_func() -> void *thread_func(void *unused)
+            # void *a_thread_func() -> void *a_thread_func(void *unused)
+            # void *a_thread_function() -> void *a_thread_function(void *unused)
+            # void a_cleanup_func() -> void a_cleanup_func(void *unused)
+            # etc, etc.
+            #'-O0',
+            #'-g3',
+            #'-fsanitize=address',
             '-Werror',
             '-Wno-format-security',
             '-Wno-int-conversion',

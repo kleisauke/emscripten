@@ -3,7 +3,11 @@
 
 #define __DEFINED_struct__IO_FILE
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/stdio.h"
+#else
 #include "../../include/stdio.h"
+#endif
 
 #undef stdin
 #undef stdout

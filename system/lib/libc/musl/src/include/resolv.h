@@ -1,7 +1,11 @@
 #ifndef RESOLV_H
 #define RESOLV_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/resolv.h"
+#else
 #include "../../include/resolv.h"
+#endif
 
 hidden int __dn_expand(const unsigned char *, const unsigned char *, const unsigned char *, char *, int);
 

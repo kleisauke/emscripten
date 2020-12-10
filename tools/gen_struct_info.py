@@ -197,6 +197,8 @@ def inspect_code(headers, cpp_opts, structs, defines):
   for path in headers:
     code.append('#include "' + path + '"')
 
+  # Avoid collision with the hidden member of EmscriptenVisibilityChangeEvent
+  code.append('#undef hidden')
   code.append('int main() {')
   c_descent('structs', code)
   for name, struct in structs.items():

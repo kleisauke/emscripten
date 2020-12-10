@@ -2,18 +2,6 @@
 #include "libc.h"
 #include "pthread_impl.h"
 
-#ifndef __EMSCRIPTEN_PTHREADS__
-static struct pthread __main_pthread;
-pthread_t __pthread_self(void) {
-  return &__main_pthread;
-}
-
-__attribute__((constructor))
-void __emscripten_pthread_data_constructor(void) {
-  __pthread_self()->locale = &libc.global_locale;
-}
-#endif // !defined(__EMSCRIPTEN_PTHREADS__)
-
 #ifdef __EMSCRIPTEN_PTHREADS__
 // In pthreads, we must initialize the runtime at the proper time, which
 // is after memory is initialized and before any userland global ctors.
@@ -32,4 +20,14 @@ void __emscripten_pthread_data_constructor(void) {
   initPthreadsJS();
   pthread_self()->locale = &libc.global_locale;
 }
-#endif // defined(__EMSCRIPTEN_PTHREADS__)
+#else // !defined(__EMSCRIPTEN_PTHREADS__)
+static struct pthread __main_pthread;
+pthread_t __pthread_self(void) {
+  return &__main_pthread;
+}
+
+__attribute__((constructor))
+void __emscripten_pthread_data_constructor(void) {
+  __pthread_self()->locale = &libc.global_locale;
+}
+#endif // !defined(__EMSCRIPTEN_PTHREADS__)

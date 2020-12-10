@@ -22,9 +22,15 @@
 typedef long syscall_arg_t;
 #endif
 
+#ifdef __cplusplus // XXX Emscripten we need C linkage for this
+extern "C" {
+#endif
 hidden long __syscall_ret(unsigned long),
 	__syscall_cp(syscall_arg_t, syscall_arg_t, syscall_arg_t, syscall_arg_t,
 	             syscall_arg_t, syscall_arg_t, syscall_arg_t);
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef __EMSCRIPTEN__
 #define __syscall_emscripten(n, ...) __syscall##n(__VA_ARGS__)
@@ -407,7 +413,11 @@ hidden long __syscall_ret(unsigned long),
 #define __sys_open_cp(...) __SYSCALL_DISP(__sys_open_cp,,__VA_ARGS__)
 #define sys_open_cp(...) __syscall_ret(__sys_open_cp(__VA_ARGS__))
 
+#ifdef __cplusplus // XXX Emscripten static array size is a C99 feature, not permitted in C++
+hidden void __procfdname(char *, unsigned);
+#else
 hidden void __procfdname(char __buf[static 15+3*sizeof(int)], unsigned);
+#endif
 
 hidden void *__vdsosym(const char *, const char *);
 

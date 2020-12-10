@@ -10,11 +10,13 @@ int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 	old = m->_m_lock;
 	own = old & 0x3fffffff;
 	if (own == tid) {
+#ifndef __EMSCRIPTEN__ // XXX Emscripten PI mutexes are unsupported (reverts musl commit 54ca677983d47529bab8752315ac1a2b49888870)
 		if ((type&8) && m->_m_count<0) {
 			old &= 0x40000000;
 			m->_m_count = 0;
 			goto success;
 		}
+#endif
 		if ((type&3) == PTHREAD_MUTEX_RECURSIVE) {
 			if ((unsigned)m->_m_count >= INT_MAX) return EAGAIN;
 			m->_m_count++;
@@ -38,10 +40,13 @@ int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 
 	if (a_cas(&m->_m_lock, old, tid) != old) {
 		self->robust_list.pending = 0;
+#ifndef __EMSCRIPTEN__ // XXX Emscripten PI mutexes are unsupported (reverts musl commit 54ca677983d47529bab8752315ac1a2b49888870)
 		if ((type&12)==12 && m->_m_waiters) return ENOTRECOVERABLE;
+#endif
 		return EBUSY;
 	}
 
+#ifndef __EMSCRIPTEN__ // XXX Emscripten PI mutexes are unsupported (reverts musl commit 54ca677983d47529bab8752315ac1a2b49888870)
 success:
 	if ((type&8) && m->_m_waiters) {
 		int priv = (type & 128) ^ 128;
@@ -49,6 +54,7 @@ success:
 		self->robust_list.pending = 0;
 		return (type&4) ? ENOTRECOVERABLE : EBUSY;
 	}
+#endif
 
 	volatile void *next = self->robust_list.head;
 	m->_m_next = next;

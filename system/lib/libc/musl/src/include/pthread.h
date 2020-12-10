@@ -1,7 +1,11 @@
 #ifndef PTHREAD_H
 #define PTHREAD_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../include/libc/pthread.h"
+#else
 #include "../../include/pthread.h"
+#endif
 
 hidden int __pthread_once(pthread_once_t *, void (*)(void));
 hidden void __pthread_testcancel(void);

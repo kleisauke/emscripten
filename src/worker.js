@@ -204,9 +204,7 @@ this.onmessage = function(e) {
 #endif
           Module['PThread'].threadExit(result);
       } catch(ex) {
-        if (ex === 'Canceled!') {
-          Module['PThread'].threadCancel();
-        } else if (ex != 'unwind') {
+        if (ex != 'unwind') {
 #if ASSERTIONS
           // FIXME(sbc): Figure out if this is still needed or useful.  Its not
           // clear to me how this check could ever fail.  In order to get into
@@ -228,13 +226,27 @@ this.onmessage = function(e) {
 #if ASSERTIONS
               err('Pthread 0x' + _pthread_self().toString(16) + ' called exit(), calling threadExit.');
 #endif
-              Module['PThread'].threadExit(ex.status);
+              try {
+                Module['PThread'].threadExit(ex.status);
+              } catch (e) {
+                // TODO(kleisauke): threadExit always throws 'unwind'
+                if (e != 'unwind') {
+                  throw e;
+                }
+              }
             }
           }
           else
 #endif
           {
-            Module['PThread'].threadExit(-2);
+            try {
+              Module['PThread'].threadExit(-2);
+            } catch (e) {
+              // TODO(kleisauke): threadExit always throws 'unwind'
+              if (e != 'unwind') {
+                throw e;
+              }
+            }
             throw ex;
           }
 #if ASSERTIONS
@@ -245,8 +257,8 @@ this.onmessage = function(e) {
         }
       }
     } else if (e.data.cmd === 'cancel') { // Main thread is asking for a pthread_cancel() on this thread.
-      if (threadInfoStruct) {
-        Module['PThread'].threadCancel();
+       if (threadInfoStruct) {
+        Module['PThread'].threadExit(-1/*PTHREAD_CANCELED*/);
       }
     } else if (e.data.target === 'setimmediate') {
       // no-op

@@ -1,7 +1,11 @@
 #ifndef SYS_MMAN_H
 #define SYS_MMAN_H
 
+#ifdef __EMSCRIPTEN__
+#include "../../../../../../include/libc/sys/mman.h"
+#else
 #include "../../../include/sys/mman.h"
+#endif
 
 hidden void __vm_wait(void);
 hidden void __vm_lock(void);
