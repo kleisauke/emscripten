@@ -107,14 +107,6 @@ var LibraryManager = {
         'library_pipefs.js', // ok to include it by default since it's only used if the syscall is used
         'library_sockfs.js', // ok to include it by default since it's only used if the syscall is used
       ]);
-
-      if (NODERAWFS) {
-        // NODERAWFS requires NODEFS
-        if (SYSTEM_JS_LIBRARIES.indexOf('library_nodefs.js') < 0) {
-          libraries.push('library_nodefs.js');
-        }
-        libraries.push('library_noderawfs.js');
-      }
     }
 
     // Additional JS libraries (without AUTO_JS_LIBRARIES, link to these explicitly via -lxxx.js)
@@ -172,6 +164,11 @@ var LibraryManager = {
         'library_formatString.js',
         'library_stack_trace.js'
       ];
+    }
+
+    // NODERAWFS requires NODEFS
+    if (libraries.indexOf('library_noderawfs.js') >= 0) {
+        libraries.push('library_nodefs.js');
     }
 
     // Deduplicate libraries to avoid processing any library file multiple times

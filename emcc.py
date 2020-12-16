@@ -391,6 +391,8 @@ def apply_settings(changes):
     # TODO(sbc): Remove this legacy way.
     if key == 'WASM_OBJECT_FILES':
       shared.Settings.LTO = 0 if value else 'full'
+    if key == 'NODERAWFS' and value:
+      shared.Settings.SYSTEM_JS_LIBRARIES.append((0, shared.path_from_root('src', 'library_noderawfs.js')))
 
 
 def find_output_arg(args):

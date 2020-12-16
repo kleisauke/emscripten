@@ -754,7 +754,8 @@ var FORCE_FILESYSTEM = 0;
 // program would be, which means that differences in how the underlying OS
 // handles permissions and errors and so forth may be noticeable.  This has
 // mostly been tested on Linux so far.
-var NODERAWFS = 0;
+// TODO(kleisauke): This should also be documented in https://emscripten.org/docs/api_reference/Filesystem-API.html
+//var NODERAWFS = 0;
 
 // This saves the compiled wasm module in a file with name
 //   $WASM_BINARY_NAME.$V8_VERSION.cached
@@ -1731,4 +1732,6 @@ var LEGACY_SETTINGS = [
   ['BINARYEN_SCRIPTS', [""], 'No longer needed'],
   ['WARN_UNALIGNED', [0, 1], 'No longer needed'],
   ['ASM_PRIMITIVE_VARS', [[]], 'No longer needed'],
+  // NODERAWFS is handled in emcc.py, supporting both 0 and 1 for now.
+  ['NODERAWFS', [0, 1], 'For NODERAWFS, use -lnoderawfs.js instead'],
 ];
