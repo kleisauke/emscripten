@@ -49,9 +49,8 @@ void mainn() {
     printf("done!\n");
 #ifndef POOL
     emscripten_cancel_main_loop();
-#else
-    exit(0);
 #endif
+    exit(0);
   }
 }
 
