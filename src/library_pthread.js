@@ -440,9 +440,6 @@ var LibraryPThread = {
             worker.on('error', function(data) {
               worker.onerror(data.err);
             });
-            worker.on('exit', function(data) {
-              console.log('worker exited - TODO: update the worker queue?');
-            });
           }
         }(worker));
       }  // for each worker
@@ -957,11 +954,6 @@ var LibraryPThread = {
     else PThread.threadExit(status);
 #if WASM_BACKEND
     // pthread_exit is marked noReturn, so we must not return from it.
-    if (ENVIRONMENT_HAS_NODE) {
-      // exit the pthread properly on node, as a normal JS exception will halt
-      // the entire application.
-      process.exit(status);
-    }
     throw 'pthread_exit';
 #endif
   },
