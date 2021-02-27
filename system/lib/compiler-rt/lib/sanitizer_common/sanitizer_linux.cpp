@@ -606,7 +606,7 @@ tid_t GetTid() {
 #    elif SANITIZER_SOLARIS
   return thr_self();
 #    elif SANITIZER_EMSCRIPTEN
-  return (tid_t)pthread_self();
+  return gettid();
 #    else
   return internal_syscall(SYSCALL(gettid));
 #    endif
