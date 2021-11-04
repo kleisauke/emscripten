@@ -68,31 +68,6 @@ static long dummy_getpid() {
 }
 weak_alias(dummy_getpid, __syscall_getpid);
 
-static int tl_lock_count;
-static int tl_lock_waiters;
-
-volatile int __thread_list_lock;
-
-void __tl_lock(void) {
-  int tid = __pthread_self()->tid;
-  int val = __thread_list_lock;
-  if (val == tid) {
-    tl_lock_count++;
-    return;
-  }
-  while ((val = a_cas(&__thread_list_lock, 0, tid)))
-    __wait(&__thread_list_lock, &tl_lock_waiters, val, 0);
-}
-
-void __tl_unlock(void) {
-  if (tl_lock_count) {
-    tl_lock_count--;
-    return;
-  }
-  a_store(&__thread_list_lock, 0);
-  if (tl_lock_waiters) __wake(&__thread_list_lock, 1, 0);
-}
-
 int __pthread_create(pthread_t* restrict res,
                      const pthread_attr_t* restrict attrp,
                      void* (*entry)(void*),
@@ -120,8 +95,6 @@ int __pthread_create(pthread_t* restrict res,
     libc.threaded = 1;
   }
 
-  struct pthread *self = __pthread_self();
-
   // Allocate thread block (pthread_t structure).
   struct pthread *new = malloc(sizeof(struct pthread));
   // zero-initialize thread structure.
@@ -141,23 +114,8 @@ int __pthread_create(pthread_t* restrict res,
   new->tsd = malloc(PTHREAD_KEYS_MAX * sizeof(void*));
   memset(new->tsd, 0, PTHREAD_KEYS_MAX * sizeof(void*));
 
-  //printf("start __pthread_create: %p\n", self);
-  int rtn = __pthread_create_js(new, attrp, entry, arg);
-  if (rtn != 0)
-    return rtn;
-
-  __tl_lock();
-
-  new->next = self->next;
-  new->prev = self;
-  new->next->prev = new;
-  new->prev->next = new;
-
-  __tl_unlock();
-
   *res = new;
-  //printf("done __pthread_create self=%p next=%p prev=%p new=%p\n", self, self->next, self->prev, new);
-  return 0;
+  return __pthread_create_js(new, attrp, entry, arg);
 }
 
 static void free_tls_data() {
@@ -185,14 +143,6 @@ void _emscripten_thread_exit(void* result) {
   __pthread_tsd_run_dtors();
 
   free_tls_data();
-
-  __tl_lock();
-
-  self->next->prev = self->prev;
-  self->prev->next = self->next;
-  self->prev = self->next = self;
-
-  __tl_unlock();
 
   if (self == emscripten_main_browser_thread_id()) {
     exit(0);

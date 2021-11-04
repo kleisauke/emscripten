@@ -10,8 +10,6 @@ $__pthread_self_internal
 $__pthread_setcancelstate
 $__stdio_write
 $__timedwait
-$__tl_lock
-$__tl_unlock
 $__wasi_syscall_ret
 $__wasm_call_ctors
 $__wasm_init_memory

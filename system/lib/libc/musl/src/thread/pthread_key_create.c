@@ -17,12 +17,14 @@ static void nodtor(void *dummy)
 {
 }
 
+#ifndef __EMSCRIPTEN__ // XXX Emscripten: There's no global thread list in WASM
 static void dummy_0(void)
 {
 }
 
 weak_alias(dummy_0, __tl_lock);
 weak_alias(dummy_0, __tl_unlock);
+#endif
 
 int __pthread_key_create(pthread_key_t *k, void (*dtor)(void *))
 {
@@ -52,15 +54,23 @@ int __pthread_key_create(pthread_key_t *k, void (*dtor)(void *))
 int __pthread_key_delete(pthread_key_t k)
 {
 	sigset_t set;
+#ifdef __EMSCRIPTEN__ // XXX Emscripten: There's no global thread list in WASM
+	pthread_t self = __pthread_self();
+#else
 	pthread_t self = __pthread_self(), td=self;
+#endif
 
 	__block_app_sigs(&set);
 	__pthread_rwlock_wrlock(&key_lock);
 
+#ifdef __EMSCRIPTEN__ // XXX Emscripten: There's no global thread list in WASM
+	self->tsd[k] = 0;
+#else
 	__tl_lock();
 	do td->tsd[k] = 0;
 	while ((td=td->next)!=self);
 	__tl_unlock();
+#endif
 
 	keys[k] = 0;
 

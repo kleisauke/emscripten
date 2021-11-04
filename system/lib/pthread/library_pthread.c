@@ -843,6 +843,5 @@ void __emscripten_init_main_thread(void) {
   // tid is always non-zero.
   __main_pthread.tid = getpid();
   __main_pthread.locale = &libc.global_locale;
-  __main_pthread.next = __main_pthread.prev = &__main_pthread;
   __main_pthread.tsd = (void **)__pthread_tsd_main;
 }
