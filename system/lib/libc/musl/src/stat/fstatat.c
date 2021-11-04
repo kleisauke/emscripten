@@ -8,8 +8,10 @@
 #include "syscall.h"
 #include "kstat.h"
 
-/* XXX Emscripten: we ensure kstat == stat so we can simply make the syscall
- * without the extra copy */
+/* XXX Emscripten: We #define kstat to stat so we can simply make the syscall
+ * without the extra copy.
+ * See arch/emscripten/kstat.h
+ */
 #ifndef __EMSCRIPTEN__
 struct statx {
 	uint32_t stx_mask;
@@ -139,6 +141,7 @@ int fstatat(int fd, const char *restrict path, struct stat *restrict st, int fla
 {
 	int ret;
 #ifdef __EMSCRIPTEN__
+	// some logic here copied from fstatat_kstat above
 	if (flag==AT_EMPTY_PATH && fd>=0 && !*path)
 		ret = __syscall(SYS_fstat, fd, st);
 	else if ((fd == AT_FDCWD || *path=='/') && !flag)

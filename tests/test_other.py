@@ -1667,8 +1667,8 @@ int f() {
       emcc_args=[
         '-pthread', '-Wno-experimental',
         '-s', 'PROXY_TO_PTHREAD',
-        '-s', 'EXIT_RUNTIME',
-        '-s', 'MAIN_MODULE=2',
+        '-s', 'EXIT_RUNTIME=1',
+        '-s', 'MAIN_MODULE=1',
         'side.wasm',
       ])
 

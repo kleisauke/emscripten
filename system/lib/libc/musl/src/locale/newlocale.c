@@ -54,9 +54,6 @@ static locale_t do_newlocale(int mask, const char *name, locale_t loc)
 		return &default_ctype_locale;
 
 	/* If no builtin locale matched, attempt to allocate and copy. */
-	/* XXX EMSCRIPTEN .. */
-	/*if ((loc = malloc(sizeof *loc))) *loc = tmp;*/
-
 	if ((loc = malloc(sizeof *loc))) *loc = tmp;
 
 	return loc;
