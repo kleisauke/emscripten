@@ -6,7 +6,7 @@ static int __pthread_detach(pthread_t t)
 #ifdef __EMSCRIPTEN__
 	// Attempt to detach a thread which does not point to a valid thread, or
 	// does not exist anymore.
-	if (!t || t->self != t) return ESRCH;
+	if (t->self != t) return ESRCH;
 #endif
 	/* If the cas fails, detach state is either already-detached
 	 * or exiting/exited, and pthread_join will trap or cleanup. */
