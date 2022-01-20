@@ -4,7 +4,7 @@
 static int __pthread_detach(pthread_t t)
 {
 #ifdef __EMSCRIPTEN__
-	// XXX EMSCRIPTEN: Add check for invalid or non-existent threads. Again
+	// XXX EMSCRIPTEN: Add check for invalid (already joined) thread.  Again
 	// for the benefit of the conformance tests.
 	if (t->self != t) return ESRCH;
 #endif
