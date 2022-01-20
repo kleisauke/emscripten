@@ -37,10 +37,6 @@ static int __pthread_timedjoin_np(pthread_t t, void **res, const struct timespec
 			r = EINVAL;
 			break;
 		}
-		// Check whether blocking is allowed when the state is joinable.
-		// This is not necessary for exited threads because they can be
-		// joined without blocking.
-		if (state == DT_JOINABLE) emscripten_check_blocking_allowed();
 #else
 		if (state >= DT_DETACHED) a_crash();
 #endif
@@ -61,6 +57,9 @@ static int __pthread_timedjoin_np(pthread_t t, void **res, const struct timespec
 
 int __pthread_join(pthread_t t, void **res)
 {
+#ifdef __EMSCRIPTEN__ // XXX Emscripten check whether blocking is allowed.
+	emscripten_check_blocking_allowed();
+#endif
 	return __pthread_timedjoin_np(t, res, 0);
 }
 
