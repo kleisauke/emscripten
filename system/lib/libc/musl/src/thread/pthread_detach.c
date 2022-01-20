@@ -4,8 +4,8 @@
 static int __pthread_detach(pthread_t t)
 {
 #ifdef __EMSCRIPTEN__
-	// Attempt to detach a thread which does not point to a valid thread, or
-	// does not exist anymore.
+	// XXX EMSCRIPTEN: Add check for invalid or non-existent threads. Again
+	// for the benefit of the conformance tests.
 	if (t->self != t) return ESRCH;
 #endif
 	/* If the cas fails, detach state is either already-detached
