@@ -17,9 +17,8 @@ static int __pthread_timedjoin_np(pthread_t t, void **res, const struct timespec
 	// Attempt to join a thread which does not point to a valid thread, or
 	// does not exist anymore.
 	if (t->self != t) return ESRCH;
-	// Thread is attempting to join to itself.  Already detached threads are
-	// handled below by returning EINVAL instead.
-	if (t->detach_state != DT_DETACHED && __pthread_self() == t) return EDEADLK;
+	// Thread is attempting to join to itself.
+	if (__pthread_self() == t) return EDEADLK;
 #endif
 	int state, cs, r = 0;
 	__pthread_testcancel();

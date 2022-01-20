@@ -21,33 +21,27 @@ int main() {
   pthread_t self = pthread_self();
 
   /*
-   * Attempts to join the current thread will either generate
-   * EDEADLK or EINVAL depending on whether has already been
-   * detached
+   * Attempts to join the current thread will cause EDEADLK.
    */
   int ret = pthread_join(self, NULL);
   printf("pthread_join -> %s\n", strerror(ret));
-  if (is_detached) {
-    assert(ret == EINVAL);
-  } else {
-    assert(ret == EDEADLK);
-  }
+  assert(ret == EDEADLK);
 
   /*
    * Attempts to detach the main thread will either succeed
    * or cause EINVAL if its already been detached.
+   *
+   * Note that musl causes EDEADLK when already-detached threads
+   * are attempting to detach itself, since it re-uses code from
+   * pthread_join.
    */
   ret = pthread_detach(self);
   printf("pthread_detach(self) -> %s\n", strerror(ret));
   if (is_detached) {
-    assert(ret == EINVAL);
+    assert(ret == EDEADLK);
   } else {
     assert(ret == 0);
   }
-
-  ret = pthread_join(self, NULL);
-  printf("pthread_join -> %s\n", strerror(ret));
-  assert(ret == EINVAL);
 
   puts("passed");
 
