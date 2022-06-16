@@ -82,6 +82,8 @@ typedef int (*em_func_iiiiiii)(int, int, int, int, int, int);
 typedef int (*em_func_iiiiiiii)(int, int, int, int, int, int, int);
 typedef int (*em_func_iiiiiiiii)(int, int, int, int, int, int, int, int);
 typedef int (*em_func_iiiiiiiiii)(int, int, int, int, int, int, int, int, int);
+typedef int64_t (*em_func_jji)(int64_t, int);
+typedef int64_t (*em_func_jpj)(void *, int64_t);
 
 // Allocator and deallocator for em_queued_call objects.
 static em_queued_call* em_queued_call_malloc() {
@@ -265,6 +267,18 @@ static void _do_call(void* arg) {
       q->returnValue.i =
         ((em_func_iiiiiiiiii)q->functionPtr)(q->args[0].i, q->args[1].i, q->args[2].i,
           q->args[3].i, q->args[4].i, q->args[5].i, q->args[6].i, q->args[7].i, q->args[8].i);
+      break;
+    case EM_FUNC_SIG_JJI:
+      q->returnValue.i64 = ((em_func_jji)q->functionPtr)(q->args[0].i64, q->args[1].i);
+      break;
+    case EM_FUNC_SIG_JPJ:
+      q->returnValue.i64 = ((em_func_jpj)q->functionPtr)(
+#ifdef __wasm64__
+        (void*)q->args[0].i64,
+#else
+        (void*)q->args[0].i,
+#endif
+        q->args[1].i64);
       break;
     default:
       assert(0 && "Invalid Emscripten pthread _do_call opcode!");
