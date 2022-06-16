@@ -71,6 +71,8 @@ typedef int (*em_func_iiiiiii)(int, int, int, int, int, int);
 typedef int (*em_func_iiiiiiii)(int, int, int, int, int, int, int);
 typedef int (*em_func_iiiiiiiii)(int, int, int, int, int, int, int, int);
 typedef int (*em_func_iiiiiiiiii)(int, int, int, int, int, int, int, int, int);
+typedef int64_t (*em_func_jji)(int64_t, int);
+typedef int64_t (*em_func_jpj)(void *, int64_t);
 
 #define EM_THREAD_NAME_MAX 32
 
