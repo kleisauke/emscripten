@@ -145,6 +145,16 @@ typedef struct em_queued_call em_queued_call;
 #define EM_FUNC_SIG_SPECIAL_INTERNAL (1 << 24)
 #define EM_PROXIED_FUNC_SPECIAL(x) (EM_FUNC_SIG_SPECIAL_INTERNAL | ((x) << 20))
 
+#define EM_FUNC_SIG_JJI                                                        \
+    (EM_FUNC_SIG_RETURN_VALUE_J | EM_FUNC_SIG_WITH_N_PARAMETERS(2) |           \
+     EM_FUNC_SIG_SET_PARAM(0, EM_FUNC_SIG_PARAM_J) |                           \
+     EM_FUNC_SIG_SET_PARAM(1, EM_FUNC_SIG_PARAM_I))
+
+#define EM_FUNC_SIG_JPJ                                                        \
+    (EM_FUNC_SIG_RETURN_VALUE_J | EM_FUNC_SIG_WITH_N_PARAMETERS(2) |           \
+     EM_FUNC_SIG_SET_PARAM(0, EM_FUNC_SIG_PARAM_P) |                           \
+     EM_FUNC_SIG_SET_PARAM(1, EM_FUNC_SIG_PARAM_J))
+
 // Runs the given function synchronously on the main Emscripten runtime thread.
 // If this thread is the main thread, the operation is immediately performed,
 // and the result is returned.
