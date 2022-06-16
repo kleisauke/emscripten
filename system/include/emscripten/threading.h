@@ -141,6 +141,24 @@ typedef struct em_queued_call em_queued_call;
 #define EM_PROXIED_RESIZE_OFFSCREENCANVAS (EM_PROXIED_FUNC_SPECIAL(0) | EM_FUNC_SIG_IIII)
 #define EM_PROXIED_JS_FUNCTION (EM_PROXIED_FUNC_SPECIAL(1) | EM_FUNC_SIG_D)
 
+#define EM_FUNC_SIG_JJI                                                        \
+    (EM_FUNC_SIG_RETURN_VALUE_I64 | EM_FUNC_SIG_WITH_N_PARAMETERS(2) |         \
+     EM_FUNC_SIG_SET_PARAM(0, EM_FUNC_SIG_PARAM_I64) |                         \
+     EM_FUNC_SIG_SET_PARAM(1, EM_FUNC_SIG_PARAM_I))
+
+// Need to use a different type on `__wasm64__` where pointers are 64-bits wide.
+#ifdef __wasm64__
+#define EM_FUNC_SIG_JPJ                                                        \
+    (EM_FUNC_SIG_RETURN_VALUE_I64 | EM_FUNC_SIG_WITH_N_PARAMETERS(2) |         \
+     EM_FUNC_SIG_SET_PARAM(0, EM_FUNC_SIG_PARAM_I64) |                         \
+     EM_FUNC_SIG_SET_PARAM(1, EM_FUNC_SIG_PARAM_I64))
+#else
+#define EM_FUNC_SIG_JPJ                                                        \
+    (EM_FUNC_SIG_RETURN_VALUE_I64 | EM_FUNC_SIG_WITH_N_PARAMETERS(2) |         \
+     EM_FUNC_SIG_SET_PARAM(0, EM_FUNC_SIG_PARAM_I) |                           \
+     EM_FUNC_SIG_SET_PARAM(1, EM_FUNC_SIG_PARAM_I64))
+#endif
+
 // Runs the given function synchronously on the main Emscripten runtime thread.
 // If this thread is the main thread, the operation is immediately performed,
 // and the result is returned.
