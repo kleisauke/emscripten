@@ -344,7 +344,7 @@ def emscript(in_wasm, out_wasm, outfile_js, memfile):
 
   if settings.SIDE_MODULE:
     if metadata.emJsFuncs:
-      exit_with_error('EM_JS is not supported in side modules')
+      diagnostics.warning('em-js-side-module', 'EM_JS is not supported in side modules')
     logger.debug('emscript: skipping remaining js glue generation')
     return
 
