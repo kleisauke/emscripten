@@ -1098,6 +1098,19 @@ var LibraryDylink = {
     });
   },
 
+  _emscripten_get_dynamic_libraries_js__deps: ['malloc', '$stringToNewUTF8'],
+  _emscripten_get_dynamic_libraries_js: function() {
+    var size = (dynamicLibraries.length + 1) * {{{ POINTER_SIZE }}};
+    var libs = _malloc(size);
+    var libs_ptr = libs;
+    dynamicLibraries.forEach((lib) => {
+      {{{ makeSetValue('libs_ptr', 0, 'stringToNewUTF8(lib)', '*') }}};
+      libs_ptr += {{{ POINTER_SIZE }}};
+    });
+    {{{ makeSetValue('libs_ptr', 0, 0, '*') }}};
+    return libs;
+  },
+
   // void* dlopen(const char* filename, int flags);
   $dlopenInternal__deps: ['$ENV', '$dlSetError', '$PATH'],
   $dlopenInternal: (handle, jsflags) => {
