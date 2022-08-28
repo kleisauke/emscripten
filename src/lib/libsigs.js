@@ -322,6 +322,7 @@ sigs = {
   _emscripten_fetch_get_response_headers__sig: 'pipp',
   _emscripten_fetch_get_response_headers_length__sig: 'pi',
   _emscripten_fs_load_embedded_files__sig: 'vp',
+  _emscripten_get_dynamic_libraries_js__sig: 'p',
   _emscripten_get_last_devicemotion_event__sig: 'p',
   _emscripten_get_last_deviceorientation_event__sig: 'p',
   _emscripten_get_last_mouse_event__sig: 'p',
