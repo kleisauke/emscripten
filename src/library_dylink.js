@@ -1017,6 +1017,19 @@ var LibraryDylink = {
     });
   },
 
+  _emscripten_get_dynamic_libraries_js__deps: ['$allocateUTF8'],
+  _emscripten_get_dynamic_libraries_js__sig: 'i',
+  _emscripten_get_dynamic_libraries_js: function() {
+    var size = (dynamicLibraries.length + 1) * {{{ Runtime.POINTER_SIZE }}};
+    var libs = {{{ makeMalloc('_emscripten_get_dynamic_libraries_js', 'size') }}};
+    var libs_ptr = libs >> {{{ POINTER_SHIFT }}};
+    dynamicLibraries.forEach((lib) => {
+      {{{ POINTER_HEAP }}}[libs_ptr++] = {{{ to64('allocateUTF8(lib)') }}};
+    });
+    {{{ POINTER_HEAP }}}[libs_ptr] = {{{ to64('0') }}};
+    return libs;
+  },
+
   // void* dlopen(const char* filename, int flags);
   $dlopenInternal__deps: ['$FS', '$ENV', '$dlSetError', '$PATH'],
   $dlopenInternal: function(handle, jsflags) {
