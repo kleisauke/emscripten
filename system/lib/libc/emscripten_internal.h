@@ -86,6 +86,8 @@ int _munmap_js(
 int _msync_js(
   intptr_t addr, size_t length, int prot, int flags, int fd, off_t offset);
 
+char** _emscripten_get_dynamic_libraries_js(void);
+
 struct dso;
 
 typedef void (*dlopen_callback_func)(struct dso*, void* user_data);

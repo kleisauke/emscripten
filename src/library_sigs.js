@@ -322,6 +322,7 @@ sigs = {
   _emscripten_fetch_get_response_headers__sig: 'pipp',
   _emscripten_fetch_get_response_headers_length__sig: 'pi',
   _emscripten_fs_load_embedded_files__sig: 'vp',
+  _emscripten_get_dynamic_libraries_js__sig: 'p',
   _emscripten_get_now_is_monotonic__sig: 'i',
   _emscripten_get_progname__sig: 'vpi',
   _emscripten_init_main_thread_js__sig: 'vp',
