@@ -3010,6 +3010,7 @@ def phase_final_emitting(options, state, target, wasm_target, memfile):
     src = read_file(final_js)
     final_js += '.esmeta.js'
     write_file(final_js, src.replace('EMSCRIPTEN$IMPORT$META', 'import.meta'))
+    shared.get_temp_files().note(final_js)
     save_intermediate('es6-import-meta')
 
   # Apply pre and postjs files
@@ -3576,6 +3577,35 @@ def phase_binaryen(target, options, wasm_target):
     write_file(final_js, js)
 
 
+def node_es6_imports():
+  if not settings.EXPORT_ES6 or not shared.target_environment_may_be('node'):
+    return ''
+
+  if settings.USE_ES6_IMPORT_META:
+    import_script_url = 'import.meta.url'
+  else:
+    import_script_url = "pathToFileURL('.')"
+
+  # Avoid Node specific imports in browser.
+  # TODO: Swap all `require()`'s with `import()`'s?
+  if shared.target_environment_may_be('web'):
+    return '''
+if (typeof process == 'object' &&
+    typeof process.versions == 'object' &&
+    typeof process.versions.node == 'string') {
+  const { createRequire } = await import('module');
+  var { pathToFileURL, fileURLToPath } = await import('url');
+  var require = createRequire(%s);
+}
+''' % import_script_url
+  else:
+    return '''
+import { createRequire } from 'module';
+import { pathToFileURL, fileURLToPath } from 'url';
+const require = createRequire(%s);
+''' % import_script_url
+
+
 def modularize():
   global final_js
   logger.debug(f'Modularizing, assigning to var {settings.EXPORT_NAME}')
@@ -3606,24 +3636,25 @@ function(%(EXPORT_NAME)s) {
     # document.currentScript, so a simple export declaration is enough.
     src = 'var %s=%s' % (settings.EXPORT_NAME, src)
   else:
-    script_url_node = ""
+    script_url_node = ''
     # When MODULARIZE this JS may be executed later,
     # after document.currentScript is gone, so we save it.
     # In EXPORT_ES6 + USE_PTHREADS the 'thread' is actually an ES6 module webworker running in strict mode,
     # so doesn't have access to 'document'. In this case use 'import.meta' instead.
     if settings.EXPORT_ES6 and settings.USE_ES6_IMPORT_META:
-      script_url = "import.meta.url"
+      script_url = 'import.meta.url'
     else:
       script_url = "typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : undefined"
       if shared.target_environment_may_be('node'):
         script_url_node = "if (typeof __filename !== 'undefined') _scriptDir = _scriptDir || __filename;"
-    src = '''
+    src = '''%(node_imports)s
 var %(EXPORT_NAME)s = (() => {
   var _scriptDir = %(script_url)s;
   %(script_url_node)s
   return (%(src)s);
 })();
 ''' % {
+      'node_imports': node_es6_imports(),
       'EXPORT_NAME': settings.EXPORT_NAME,
       'script_url': script_url,
       'script_url_node': script_url_node,

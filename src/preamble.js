@@ -649,7 +649,13 @@ if (Module['locateFile']) {
 #if EXPORT_ES6 && USE_ES6_IMPORT_META && !SINGLE_FILE // in single-file mode, repeating WASM_BINARY_FILE would emit the contents again
 } else {
   // Use bundler-friendly `new URL(..., import.meta.url)` pattern; works in browsers too.
-  wasmBinaryFile = new URL('{{{ WASM_BINARY_FILE }}}', import.meta.url).toString();
+  wasmBinaryFile = new URL('{{{ WASM_BINARY_FILE }}}', import.meta.url);
+#if ENVIRONMENT_MAY_BE_NODE
+  if (ENVIRONMENT_IS_NODE) {
+    wasmBinaryFile = fileURLToPath(wasmBinaryFile);
+  } else
+#endif
+    wasmBinaryFile = wasmBinaryFile.href;
 }
 #endif
 

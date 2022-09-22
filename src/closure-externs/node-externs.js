@@ -111,3 +111,13 @@ Buffer.prototype.slice = function(start, end) {};
  * @nosideeffects
  */
 Buffer.prototype.toString = function(encoding, start, end) {};
+
+/**
+ * @param {string} path
+ */
+var pathToFileURL = function(path) {};
+
+/**
+ * @param {URL|string} url
+ */
+var fileURLToPath = function(url) {};

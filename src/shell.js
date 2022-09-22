@@ -193,11 +193,25 @@ if (ENVIRONMENT_IS_NODE) {
   if (typeof process == 'undefined' || !process.release || process.release.name !== 'node') throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
 #endif
 #endif
+  // These modules will usually be used on Node.js. Load them eagerly to avoid
+  // the complexity of lazy-loading.
+  var fs = require('fs');
+  var nodePath = require('path');
+
   if (ENVIRONMENT_IS_WORKER) {
-    scriptDirectory = require('path').dirname(scriptDirectory) + '/';
+    scriptDirectory = nodePath.dirname(scriptDirectory);
   } else {
-    scriptDirectory = __dirname + '/';
+#if EXPORT_ES6
+    // FIXME: How about the -sUSE_ES6_IMPORT_META=0 case? Is there a way of
+    // getting the current absolute path of the module when support for
+    // `import.meta.url` is not available?
+    scriptDirectory = nodePath.dirname(fileURLToPath(import.meta.url));
+#else
+    scriptDirectory = __dirname;
+#endif
   }
+  // Ensure trailing slash
+  scriptDirectory += '/';
 
 #include "node_shell_read.js"
 
