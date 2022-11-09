@@ -70,17 +70,6 @@ Module['ready'] = new Promise(function(resolve, reject) {
 #endif
 #endif
 
-// --pre-jses are emitted after the Module integration code, so that they can
-// refer to Module (if they choose; they can also define Module)
-// {{PRE_JSES}}
-
-// Sometimes an existing Module object exists with properties
-// meant to overwrite the default module functionality. Here
-// we collect those properties and reapply _after_ we configure
-// the current environment's defaults to avoid having to be so
-// defensive during initialization.
-var moduleOverrides = Object.assign({}, Module);
-
 var arguments_ = [];
 var thisProgram = './this.program';
 var quit_ = (status, toThrow) => {
@@ -403,6 +392,19 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
   throw new Error('environment detection error');
 #endif // ASSERTIONS
 }
+
+// --pre-jses are emitted after the JS helpers, and the Module
+// integration code, so they can reference locateFile and
+// the ENVIRONMENT_IS_* helpers, as well as the Module itself
+// (or even overwrite the entire Module).
+// {{PRE_JSES}}
+
+// Sometimes an existing Module object exists with properties
+// meant to overwrite the default module functionality. Here
+// we collect those properties and reapply _after_ we configure
+// the current environment's defaults to avoid having to be so
+// defensive during initialization.
+var moduleOverrides = Object.assign({}, Module);
 
 #if ENVIRONMENT_MAY_BE_NODE && USE_PTHREADS
 if (ENVIRONMENT_IS_NODE) {
