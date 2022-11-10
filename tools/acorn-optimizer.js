@@ -2022,6 +2022,8 @@ try {
     preserveParens: closureFriendly,
     onComment: closureFriendly ? sourceComments : undefined,
     sourceType: exportES6 ? 'module' : 'script',
+    // See: other.test_export_es6_allows_export_in_post_js
+    allowImportExportEverywhere: exportES6,
   });
 } catch (err) {
   err.message += (() => {

@@ -34,15 +34,6 @@ function processMacros(text) {
 // Also handles #include x.js (similar to C #include <file>)
 function preprocess(filename) {
   let text = read(filename);
-  if (EXPORT_ES6 && USE_ES6_IMPORT_META) {
-    // `eval`, Terser and Closure don't support module syntax; to allow it,
-    // we need to temporarily replace `import.meta` and `await import` usages
-    // with placeholders during preprocess phase, and back after all the other ops.
-    // See also: `phase_final_emitting` in emcc.py.
-    text = text
-      .replace(/\bimport\.meta\b/g, 'EMSCRIPTEN$IMPORT$META')
-      .replace(/\bawait import\b/g, 'EMSCRIPTEN$AWAIT$IMPORT');
-  }
   // Remove windows line endings, if any
   text = text.replace(/\r\n/g, '\n');
 

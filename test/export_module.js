@@ -1,5 +1,2 @@
-function doNothing() {
-  return false;
-}
-
-export {doNothing};
+const doNothing = () => false;
+export default doNothing;

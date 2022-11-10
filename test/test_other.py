@@ -309,14 +309,31 @@ class other(RunnerCore):
   @parameterized({
     '': ([],),
     'node': (['-sENVIRONMENT=node'],),
+    'optimize': (['-O3'],),  # i.e., OPT_LEVEL >= 2, minified with tools/acorn-optimizer.js
   })
   def test_emcc_output_mjs(self, args):
+    optimized = '-O3' in args
     create_file('extern-post.js', 'await Module();')
     self.run_process([EMCC, '-o', 'hello_world.mjs',
                       '--extern-post-js', 'extern-post.js',
                       test_file('hello_world.c')] + args)
     src = read_file('hello_world.mjs')
     self.assertContained('export default Module;', src)
+    self.assertContainedIf("new URL('hello_world.wasm', import.meta.url)", src, not optimized)
+    self.assertContainedIf('new URL("hello_world.wasm",import.meta.url)', src, optimized)
+    self.assertContained('hello, world!', self.run_js('hello_world.mjs'))
+
+  @parameterized({
+    '': ([],),
+    'node': (['-sENVIRONMENT=node'],),
+  })
+  def test_emcc_output_mjs_closure(self, args):
+    create_file('extern-post.js', 'await Module();')
+    self.run_process([EMCC, '-o', 'hello_world.mjs',
+                      '--extern-post-js', 'extern-post.js',
+                      test_file('hello_world.c'), '--closure=1'] + args)
+    src = read_file('hello_world.mjs')
+    self.assertContained('new URL("hello_world.wasm", import.meta.url)', src)
     self.assertContained('hello, world!', self.run_js('hello_world.mjs'))
 
   @parameterized({
@@ -352,15 +369,6 @@ class other(RunnerCore):
     self.assertContained("new Worker(pthreadMainJs, {type: 'module'})", src)
     self.assertContained('hello, world!', self.run_js('hello_world.mjs'))
 
-  def test_emcc_output_mjs_closure(self):
-    create_file('extern-post.js', 'await Module();')
-    self.run_process([EMCC, '-o', 'hello_world.mjs',
-                      '--extern-post-js', 'extern-post.js',
-                      test_file('hello_world.c'), '--closure=1'])
-    src = read_file('hello_world.mjs')
-    self.assertContained('new URL("hello_world.wasm", import.meta.url)', src)
-    self.assertContained('hello, world!', self.run_js('hello_world.mjs'))
-
   def test_emcc_output_mjs_web_no_import_meta(self):
     # Ensure we don't emit import.meta.url at all for:
     # ENVIRONMENT=web + EXPORT_ES6 + USE_ES6_IMPORT_META=0
@@ -386,9 +394,10 @@ class other(RunnerCore):
     self.assertContained('EXPORT_ES6 and ENVIRONMENT=*node* requires USE_ES6_IMPORT_META to be set', err)
 
   def test_export_es6_allows_export_in_post_js(self):
-    self.run_process([EMCC, test_file('hello_world.c'), '-O3', '-sEXPORT_ES6', '--post-js', test_file('export_module.js')])
+    self.run_process([EMCC, test_file('hello_world.c'), '-O3', '-sEXPORT_ES6',
+                      '--post-js', test_file('export_module.js')])
     src = read_file('a.out.js')
-    self.assertContained('export{doNothing};', src)
+    self.assertContained('export default doNothing;', src)
 
   def test_emcc_out_file(self):
     # Verify that "-ofile" works in addition to "-o" "file"

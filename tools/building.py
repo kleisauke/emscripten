@@ -581,6 +581,14 @@ def closure_compiler(filename, advanced=True, extra_closure_args=None):
   args = ['--compilation_level', 'ADVANCED_OPTIMIZATIONS' if advanced else 'SIMPLE_OPTIMIZATIONS']
   # Keep in sync with ecmaVersion in tools/acorn-optimizer.js
   args += ['--language_in', 'ECMASCRIPT_2021']
+  # Make Closure aware of the ES6 module syntax;
+  # i.e. the `import.meta` and `await import` usages
+  if settings.EXPORT_ES6 and settings.USE_ES6_IMPORT_META:
+    args += ['--chunk_output_type', 'ES_MODULES']
+    if shared.target_environment_may_be('node'):
+      args += ['--module_resolution', 'NODE']
+      # https://github.com/google/closure-compiler/issues/3740
+      args += ['--jscomp_off=moduleLoad']
   # Tell closure not to do any transpiling or inject any polyfills.
   # At some point we may want to look into using this as way to convert to ES5 but
   # babel is perhaps a better tool for that.

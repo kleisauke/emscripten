@@ -2017,9 +2017,9 @@ def phase_final_emitting(options, state, target, wasm_target, memfile):
     create_worker_file('src/audio_worklet.js', target_dir, settings.AUDIO_WORKLET_FILE)
 
   if settings.MODULARIZE:
-    modularize()
+    final_js = post_modularize(final_js)
   elif settings.USE_CLOSURE_COMPILER:
-    module_export_name_substitution()
+    final_js = module_export_name_substitution(final_js)
 
   # Run a final optimization pass to clean up items that were not possible to
   # optimize by Closure, or unoptimalities that were left behind by processing
@@ -2030,18 +2030,6 @@ def phase_final_emitting(options, state, target, wasm_target, memfile):
     # to further minify the code. (n.b. it would not be safe to run in advanced
     # mode)
     final_js = building.closure_compiler(final_js, advanced=False, extra_closure_args=options.closure_args)
-
-  # Unmangle previously mangled `import.meta` and `await import` references in
-  # both main code and libraries.
-  # See also: `preprocess` in parseTools.js.
-  if settings.EXPORT_ES6 and settings.USE_ES6_IMPORT_META:
-    src = read_file(final_js)
-    final_js += '.esmeta.js'
-    write_file(final_js, src
-               .replace('EMSCRIPTEN$IMPORT$META', 'import.meta')
-               .replace('EMSCRIPTEN$AWAIT$IMPORT', 'await import'))
-    shared.get_temp_files().note(final_js)
-    save_intermediate('es6-module')
 
   # Apply pre and postjs files
   if options.extern_pre_js or options.extern_post_js:
@@ -2145,6 +2133,10 @@ def phase_binaryen(target, options, wasm_target, memfile):
   # after generating the wasm, do some final operations
 
   if final_js:
+    if settings.MODULARIZE:
+      with ToolchainProfiler.profile_block('pre_modularize'):
+        final_js = pre_modularize(final_js)
+
     if settings.SUPPORT_BIG_ENDIAN:
       with ToolchainProfiler.profile_block('little_endian_heap'):
         final_js = building.little_endian_heap(final_js)
@@ -2304,10 +2296,9 @@ const availableParallelism = () => cpus().length;
 
   return static_import
 
-def modularize():
-  global final_js
-  logger.debug(f'Modularizing, assigning to var {settings.EXPORT_NAME}')
-  src = read_file(final_js)
+def pre_modularize(js_file):
+  logger.debug(f'Pre-modularizing, assigning to var {settings.EXPORT_NAME}')
+  src = read_file(js_file)
 
   # Multi-environment ES6 builds require an async function
   async_emit = ''
@@ -2316,21 +2307,14 @@ def modularize():
      shared.target_environment_may_be('web'):
     async_emit = 'async '
 
-  # Return the incoming `moduleArg`.  This is is equeivielt to the `Module` var within the
-  # generated code but its not run through closure minifiection so we can reference it in
-  # the the return statement.
-  return_value = 'moduleArg'
+  return_value = 'Module'
   if settings.WASM_ASYNC_COMPILATION:
     return_value += '.ready'
   if not settings.EXPORT_READY_PROMISE:
     return_value = '{}'
 
-  # TODO: Remove when https://bugs.webkit.org/show_bug.cgi?id=223533 is resolved.
-  if async_emit != '' and settings.EXPORT_NAME == 'config':
-    diagnostics.warning('emcc', 'EXPORT_NAME should not be named "config" when targeting Safari')
-
   src = '''
-%(maybe_async)sfunction(moduleArg = {}) {
+%(maybe_async)sfunction(Module = {}) {
 
 %(src)s
 
@@ -2354,14 +2338,13 @@ def modularize():
     if shared.target_environment_may_be('web') and \
        not settings.EXPORT_ES6 or not settings.USE_ES6_IMPORT_META:
       script_url_web = "var _scriptSrc = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : '';"
-    src = '''%(node_imports)s
+    src = '''
 var %(EXPORT_NAME)s = (() => {
   %(script_url_web)s
   return (%(src)s);
 })();
 %(capture_module_function_for_audio_worklet)s;
 ''' % {
-      'node_imports': node_es6_imports(),
       'EXPORT_NAME': settings.EXPORT_NAME,
       'script_url_web': script_url_web,
       'src': src,
@@ -2371,7 +2354,40 @@ var %(EXPORT_NAME)s = (() => {
       'capture_module_function_for_audio_worklet': 'globalThis.AudioWorkletModule = ' + settings.EXPORT_NAME if settings.AUDIO_WORKLET and settings.MODULARIZE else ''
     }
 
-  final_js += '.modular.js'
+  final_js = js_file + '.pre-modular.js'
+  with open(final_js, 'w', encoding='utf-8') as f:
+    f.write(src)
+
+    # Ensure Closure compiler is aware of that
+    # settings.EXPORT_NAME needs to be exported.
+    # https://stackoverflow.com/questions/46092308
+    if settings.USE_CLOSURE_COMPILER:
+      f.write('window["%(EXPORT_NAME)s"] = %(EXPORT_NAME)s;' % {
+        'EXPORT_NAME': settings.EXPORT_NAME
+      })
+
+  shared.get_temp_files().note(final_js)
+  save_intermediate('pre-modularized')
+  return final_js
+
+
+def post_modularize(js_file):
+  src = read_file(js_file)
+
+  # Replace variants of `window.Module` with `var Module`
+  # and remove the line containing `export{};`
+  # See also: `pre_modularize`
+  if settings.USE_CLOSURE_COMPILER:
+    src = src.replace('window.%s' % settings.EXPORT_NAME,
+                      'var %s' % settings.EXPORT_NAME)
+    src = src.replace('window["%s"]' % settings.EXPORT_NAME,
+                      'var %s' % settings.EXPORT_NAME)
+    src = src.replace('export{};\n', '')
+
+  # Prepend static import declarations, if any
+  src = node_es6_imports() + src
+
+  final_js = js_file + '.post-modular.js'
   with open(final_js, 'w', encoding='utf-8') as f:
     f.write(src)
 
@@ -2387,15 +2403,15 @@ else if (typeof define === 'function' && define['amd'])
 ''' % {'EXPORT_NAME': settings.EXPORT_NAME})
 
   shared.get_temp_files().note(final_js)
-  save_intermediate('modularized')
+  save_intermediate('post-modularized')
+  return final_js
 
 
-def module_export_name_substitution():
+def module_export_name_substitution(js_file):
   assert not settings.MODULARIZE
-  global final_js
   logger.debug(f'Private module export name substitution with {settings.EXPORT_NAME}')
-  src = read_file(final_js)
-  final_js += '.module_export_name_substitution.js'
+  src = read_file(js_file)
+  final_js = js_file + '.module_export_name_substitution.js'
   if settings.MINIMAL_RUNTIME and not settings.ENVIRONMENT_MAY_BE_NODE and not settings.ENVIRONMENT_MAY_BE_SHELL and not settings.AUDIO_WORKLET:
     # On the web, with MINIMAL_RUNTIME, the Module object is always provided
     # via the shell html in order to provide the .asm.js/.wasm content.
@@ -2407,6 +2423,7 @@ def module_export_name_substitution():
   write_file(final_js, new_src)
   shared.get_temp_files().note(final_js)
   save_intermediate('module_export_name_substitution')
+  return final_js
 
 
 def generate_traditional_runtime_html(target, options, js_target, target_basename,

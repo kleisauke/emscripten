@@ -5,7 +5,7 @@
  */
 
 #if MODULARIZE
-var Module = moduleArg;
+// Defined in `pre_modularize`
 #elif USE_CLOSURE_COMPILER
 // if (!Module)` is crucial for Closure Compiler here as it will
 // otherwise replace every `Module` occurrence with the object below

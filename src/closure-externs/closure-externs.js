@@ -11,10 +11,6 @@
  * The closure_compiler() method in tools/shared.py refers to this file when calling closure.
  */
 
-// Special placeholder for `import.meta` and `await import`.
-var EMSCRIPTEN$IMPORT$META;
-var EMSCRIPTEN$AWAIT$IMPORT;
-
 // Don't minify ES6 static imports (i.e. when doing -sEXPORT_ES6 + -sENVIRONMENT=node)
 var nodePath;
 var fileURLToPath;
