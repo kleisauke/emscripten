@@ -143,16 +143,24 @@ var ENVIRONMENT_IS_WASM_WORKER = Module['$ww'];
 #if SHARED_MEMORY && !MODULARIZE
 // In MODULARIZE mode _scriptDir needs to be captured already at the very top of the page immediately when the page is parsed, so it is generated there
 // before the page load. In non-MODULARIZE modes generate it here.
-var _scriptDir = (typeof document != 'undefined' && document.currentScript) ? document.currentScript.src : undefined;
+var _scriptDir;
 
+#if ENVIRONMENT_MAY_BE_NODE
+if (ENVIRONMENT_IS_NODE) {
+  _scriptDir = __filename;
+} else
+#endif // ENVIRONMENT_MAY_BE_NODE
+#if ENVIRONMENT_MAY_BE_WORKER
 if (ENVIRONMENT_IS_WORKER) {
   _scriptDir = self.location.href;
-}
-#if ENVIRONMENT_MAY_BE_NODE
-else if (ENVIRONMENT_IS_NODE) {
-  _scriptDir = __filename;
-}
-#endif // ENVIRONMENT_MAY_BE_NODE
+} else
+#endif // ENVIRONMENT_MAY_BE_WORKER
+#if ENVIRONMENT_MAY_BE_WEB
+if (typeof document != 'undefined' && document.currentScript) { // web
+  _scriptDir = document.currentScript.src;
+} else
+#endif // ENVIRONMENT_MAY_BE_WEB
+  _scriptDir = undefined;
 #endif // SHARED_MEMORY && !MODULARIZE
 
 // `/` should be present at the end if `scriptDirectory` is not empty
@@ -209,18 +217,14 @@ if (ENVIRONMENT_IS_NODE) {
   var fs = require('fs');
   var nodePath = require('path');
 
-  if (ENVIRONMENT_IS_WORKER) {
-    scriptDirectory = nodePath.dirname(scriptDirectory) + '/';
-  } else {
 #if EXPORT_ES6
-    // EXPORT_ES6 + ENVIRONMENT_IS_NODE always requires use of import.meta.url,
-    // since there's no way getting the current absolute path of the module when
-    // support for that is not available.
-    scriptDirectory = require('url').fileURLToPath(new URL('./', import.meta.url)); // includes trailing slash
+  // EXPORT_ES6 + ENVIRONMENT_IS_NODE always requires use of import.meta.url,
+  // since there's no way getting the current absolute path of the module when
+  // support for that is not available.
+  scriptDirectory = require('url').fileURLToPath(new URL('./', import.meta.url)); // includes trailing slash
 #else
-    scriptDirectory = __dirname + '/';
+  scriptDirectory = __dirname + '/';
 #endif
-  }
 
 #include "node_shell_read.js"
 
@@ -384,9 +388,7 @@ if (ENVIRONMENT_IS_SHELL) {
 // ENVIRONMENT_IS_NODE.
 #if ENVIRONMENT_MAY_BE_WEB || ENVIRONMENT_MAY_BE_WORKER
 if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
-  if (ENVIRONMENT_IS_WORKER) { // Check worker, not web, since window could be polyfilled
-    scriptDirectory = self.location.href;
-  } else if (typeof document != 'undefined' && document.currentScript) { // web
+  if (typeof document != 'undefined' && document.currentScript) { // web
     scriptDirectory = document.currentScript.src;
   }
 #if MODULARIZE
