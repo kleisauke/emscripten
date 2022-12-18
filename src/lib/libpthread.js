@@ -437,7 +437,7 @@ var LibraryPThread = {
       // See https://github.com/webpack/webpack/issues/12638
       worker = new Worker(new URL('{{{ TARGET_JS_NAME }}}', import.meta.url), {{{ pthreadWorkerOptions }}});
 #else // EXPORT_ES6
-      var pthreadMainJs = _scriptName;
+      var pthreadMainJs = currentScript;
 #if expectToReceiveOnModule('mainScriptUrlOrBlob')
       // We can't use makeModuleReceiveWithVar here since we want to also
       // call URL.createObjectURL on the mainScriptUrlOrBlob.
