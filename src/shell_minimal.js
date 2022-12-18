@@ -140,12 +140,6 @@ function ready() {
 var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function';
 var ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && self.name == 'em-pthread';
 
-#if !MODULARIZE
-// In MODULARIZE mode _scriptName needs to be captured already at the very top of the page immediately when the page is parsed, so it is generated there
-// before the page load. In non-MODULARIZE modes generate it here.
-var _scriptName = (typeof document != 'undefined') ? document.currentScript?.src : undefined;
-#endif
-
 #if ENVIRONMENT_MAY_BE_NODE
 if (ENVIRONMENT_IS_NODE) {
   var worker_threads = require('worker_threads');
@@ -154,12 +148,39 @@ if (ENVIRONMENT_IS_NODE) {
   // Under node we set `workerData` to `em-pthread` to signal that the worker
   // is hosting a pthread.
   ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && worker_threads['workerData'] == 'em-pthread'
-  _scriptName = __filename;
+}
+#endif // ENVIRONMENT_MAY_BE_NODE
+
+#if EXPORT_ES6 && USE_ES6_IMPORT_META
+var currentScript = import.meta.url;
+#else
+var currentScript;
+
+#if ENVIRONMENT_MAY_BE_NODE
+if (typeof __filename !== 'undefined') { // Node
+  currentScript = __filename;
+} else
+#endif // ENVIRONMENT_MAY_BE_NODE
+#if ENVIRONMENT_MAY_BE_WORKER
+if (ENVIRONMENT_IS_WORKER) {
+  currentScript = self.location.href;
+} else
+#endif // ENVIRONMENT_MAY_BE_WORKER
+#if ENVIRONMENT_MAY_BE_WEB
+#if MODULARIZE
+// When MODULARIZE this JS may be executed later, after document.currentScript is gone, so we store it in _scriptName.
+if (ENVIRONMENT_IS_WEB) {
+  currentScript = _scriptName;
+} else 
+#else
+// In non-MODULARIZE mode we generate it here.
+if (typeof document != 'undefined') { // web
+  currentScript = document.currentScript?.src;
 } else
 #endif
-if (ENVIRONMENT_IS_WORKER) {
-  _scriptName = self.location.href;
-}
+#endif // ENVIRONMENT_MAY_BE_WEB
+  currentScript = undefined;
+#endif // EXPORT_ES6 && USE_ES6_IMPORT_META
 #endif // PTHREADS
 
 // --pre-jses are emitted after the Module integration code, so that they can
