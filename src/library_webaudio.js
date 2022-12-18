@@ -205,7 +205,7 @@ let LibraryWebAudio = {
 #if MINIMAL_RUNTIME
         Module['js']
 #else
-        Module['mainScriptUrlOrBlob'] || _scriptName
+        Module['mainScriptUrlOrBlob'] || currentScript
 #endif
       );
     }).then(() => {
