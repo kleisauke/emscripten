@@ -28,15 +28,10 @@ if (ENVIRONMENT_IS_PTHREAD) {
 
     Object.assign(globalThis, {
       self: global,
-      location: {
-        // __filename is undefined in ES6 modules, and import.meta.url only in ES6
-        // modules.
-#if EXPORT_ES6
-        href: typeof __filename !== 'undefined' ? __filename : import.meta.url
-#else
-        href: __filename
+#if !EXPORT_ES6
+      __filename,
+      __dirname,
 #endif
-      },
       // Dummy importScripts.  The presence of this global is used
       // to detect that we are running on a Worker.
       // TODO(sbc): Find another way?
