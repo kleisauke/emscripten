@@ -30,9 +30,10 @@ if (ENVIRONMENT_IS_NODE) {
     self: global,
     require,
     Module,
-    location: {
-      href: __filename
-    },
+#if !EXPORT_ES6
+    __filename,
+    __dirname,
+#endif
     Worker: nodeWorkerThreads.Worker,
     importScripts: (f) => (0, eval)(fs.readFileSync(f, 'utf8') + '//# sourceURL=' + f),
     postMessage: (msg) => parentPort.postMessage(msg),
