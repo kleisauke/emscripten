@@ -374,7 +374,7 @@ var LibraryPThread = {
         // independently load up the same main application file.
         'urlOrBlob': Module['mainScriptUrlOrBlob']
 #if !EXPORT_ES6
-        || _scriptDir
+        || currentScript
 #endif
         ,
 #if WASM2JS
