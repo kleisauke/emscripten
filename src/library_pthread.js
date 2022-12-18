@@ -454,7 +454,7 @@ var LibraryPThread = {
 #endif
       worker = new Worker(new URL(import.meta.url), workerOptions);
 #else
-      var pthreadMainJs = _scriptName;
+      var pthreadMainJs = currentScript;
 #if expectToReceiveOnModule('mainScriptUrlOrBlob')
       // We can't use makeModuleReceiveWithVar here since we want to also
       // call URL.createObjectURL on the mainScriptUrlOrBlob.
