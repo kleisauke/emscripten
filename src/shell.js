@@ -176,24 +176,36 @@ var quit_ = (status, toThrow) => {
   throw toThrow;
 };
 
-#if SHARED_MEMORY && !MODULARIZE
-// In MODULARIZE mode _scriptName needs to be captured already at the very top of the page immediately when the page is parsed, so it is generated there
-// before the page load. In non-MODULARIZE modes generate it here.
-var _scriptName = (typeof document != 'undefined') ? document.currentScript?.src : undefined;
+#if EXPORT_ES6 && USE_ES6_IMPORT_META
+var currentScript = import.meta.url;
+#else
+var currentScript;
 
 #if ENVIRONMENT_MAY_BE_NODE
-if (ENVIRONMENT_IS_NODE) {
-#if EXPORT_ES6
-  _scriptName = typeof __filename != 'undefined' ? __filename : import.meta.url
-#else
-  _scriptName = __filename;
-#endif
+if (typeof __filename !== 'undefined') { // Node
+  currentScript = __filename;
 } else
 #endif // ENVIRONMENT_MAY_BE_NODE
+#if ENVIRONMENT_MAY_BE_WORKER
 if (ENVIRONMENT_IS_WORKER) {
-  _scriptName = self.location.href;
-}
-#endif // SHARED_MEMORY && !MODULARIZE
+  currentScript = self.location.href;
+} else
+#endif // ENVIRONMENT_MAY_BE_WORKER
+#if ENVIRONMENT_MAY_BE_WEB
+#if MODULARIZE
+// When MODULARIZE this JS may be executed later, after document.currentScript is gone, so we store it in _scriptName.
+if (ENVIRONMENT_IS_WEB) {
+  currentScript = _scriptName;
+} else
+#else
+// In non-MODULARIZE mode we generate it here.
+if (typeof document != 'undefined') { // web
+  currentScript = document.currentScript?.src;
+} else
+#endif
+#endif // ENVIRONMENT_MAY_BE_WEB
+  currentScript = undefined;
+#endif // EXPORT_ES6 && USE_ES6_IMPORT_META
 
 // `/` should be present at the end if `scriptDirectory` is not empty
 var scriptDirectory = '';
@@ -386,28 +398,14 @@ if (ENVIRONMENT_IS_SHELL) {
 // ENVIRONMENT_IS_NODE.
 #if ENVIRONMENT_MAY_BE_WEB || ENVIRONMENT_MAY_BE_WORKER
 if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
-  if (ENVIRONMENT_IS_WORKER) { // Check worker, not web, since window could be polyfilled
-    scriptDirectory = self.location.href;
-  } else if (typeof document != 'undefined' && document.currentScript) { // web
-    scriptDirectory = document.currentScript.src;
-  }
-#if MODULARIZE
-  // When MODULARIZE, this JS may be executed later, after document.currentScript
-  // is gone, so we saved it, and we use it here instead of any other info.
-  if (_scriptName) {
-    scriptDirectory = _scriptName;
-  }
-#endif
   // blob urls look like blob:http://site.com/etc/etc and we cannot infer anything from them.
   // otherwise, slice off the final part of the url to find the script directory.
-  // if scriptDirectory does not contain a slash, lastIndexOf will return -1,
-  // and scriptDirectory will correctly be replaced with an empty string.
-  // If scriptDirectory contains a query (starting with ?) or a fragment (starting with #),
+  // if currentScript does not contain a slash, lastIndexOf will return -1,
+  // and scriptDirectory will be an empty string.
+  // If currentScript contains a query (starting with ?) or a fragment (starting with #),
   // they are removed because they could contain a slash.
-  if (scriptDirectory.startsWith('blob:')) {
-    scriptDirectory = '';
-  } else {
-    scriptDirectory = scriptDirectory.substr(0, scriptDirectory.replace(/[?#].*/, '').lastIndexOf('/')+1);
+  if (!currentScript.startsWith('blob:')) {
+    scriptDirectory = currentScript.substr(0, currentScript.replace(/[?#].*/, '').lastIndexOf('/')+1);
   }
 
 #if ENVIRONMENT && ASSERTIONS
