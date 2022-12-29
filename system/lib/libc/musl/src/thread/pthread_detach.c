@@ -4,19 +4,39 @@
 static int __pthread_detach(pthread_t t)
 {
 #ifdef __EMSCRIPTEN__
-	// XXX EMSCRIPTEN: Add check for invalid (already joined) thread.  Again
+	// XXX Emscripten: Add check for invalid (already joined) thread.  Again
 	// for the benefit of the conformance tests.
 	if (!_emscripten_thread_is_valid(t))
 		return ESRCH;
-#endif
+
+	// Note that we don't use pthread_join here, to avoid
+	// returning EDEADLK when attempting to detach itself.
+	switch (a_cas(&t->detach_state, DT_JOINABLE, DT_DETACHED)) {
+	case DT_EXITED:
+	case DT_EXITING:
+		__emscripten_thread_cleanup(t);
+		return 0;
+	case DT_JOINABLE:
+		_emscripten_thread_set_strongref(t, 0);
+		return 0;
+	case DT_DETACHED: // already-detached
+	default: // >= DT_DETACHED
+		// Even though the man page says this is undefined
+		// behaviour we ave several tests in the posixtest suite
+		// that depend on this.
+		return EINVAL;
+	}
+#else
 	/* If the cas fails, detach state is either already-detached
 	 * or exiting/exited, and pthread_join will trap or cleanup. */
 	if (a_cas(&t->detach_state, DT_JOINABLE, DT_DETACHED) != DT_JOINABLE)
 		return __pthread_join(t, 0);
 	return 0;
+#endif
 }
 
 weak_alias(__pthread_detach, pthread_detach);
 weak_alias(__pthread_detach, thrd_detach);
-// XXX EMSCRIPTEN: add extra alias for asan.
+#ifdef __EMSCRIPTEN__ // XXX Emscripten add an extra alias for ASan/LSan.
 weak_alias(__pthread_detach, emscripten_builtin_pthread_detach);
+#endif

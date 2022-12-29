@@ -41,6 +41,7 @@
         "AUDIO_S16LSB": 32784,
         "AUDIO_U8": 8,
         "CLOCK_REALTIME": 0,
+        "DT_JOINABLE": 2,
         "E2BIG": 1,
         "EACCES": 2,
         "EADDRINUSE": 3,
@@ -1411,6 +1412,7 @@
         },
         "pthread": {
             "__size__": 132,
+            "detach_state": 32,
             "profilerBlock": 112,
             "stack": 52,
             "stack_size": 56,

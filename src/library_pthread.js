@@ -575,6 +575,15 @@ var LibraryPThread = {
     else postMessage({ 'cmd': 'cleanupThread', 'thread': thread });
   },
 
+  _emscripten_thread_set_strongref: function(thread, strongRef) {
+#if ENVIRONMENT_MAY_BE_NODE
+    if (!ENVIRONMENT_IS_NODE) return;
+    var worker = PThread.pthreads[thread];
+    if (!worker) return;
+    strongRef ? worker.ref() : worker.unref();
+#endif
+  },
+
   $cleanupThread: function(pthread_ptr) {
 #if PTHREADS_DEBUG
     dbg('cleanupThread: ' + ptrToString(pthread_ptr))
@@ -681,9 +690,13 @@ var LibraryPThread = {
     // Ask the worker to start executing its pthread entry point function.
 #if ENVIRONMENT_MAY_BE_NODE
     if (ENVIRONMENT_IS_NODE) {
-      // Mark worker as strongly referenced once we start executing a pthread,
-      // so that Node.js doesn't exit while the pthread is running.
-      worker.ref();
+      // Once we start executing a pthread, we need to mark the worker as strongly
+      // referenced, depending on whether its state is joinable.
+      var detachState = Atomics.load(HEAPU32, (threadParams.pthread_ptr + {{{ C_STRUCTS.pthread.detach_state }}}) >> 2);
+      if (detachState === {{{ cDefine('DT_JOINABLE') }}}) {
+        // Node.js does not exit while a joinable pthread is running.
+        worker.ref();
+      }
     }
 #endif
     worker.postMessage(msg, threadParams.transferList);
