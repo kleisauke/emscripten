@@ -271,3 +271,8 @@ Symbol.dispose;
 var os = {};
 
 AudioWorkletProcessor.parameterDescriptors;
+
+/**
+ * Deno
+ */
+var Deno = {};
