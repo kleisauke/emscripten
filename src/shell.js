@@ -91,6 +91,9 @@ var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function';
 var ENVIRONMENT_IS_WORKER = {{{ ENVIRONMENT === 'worker' }}};
 #endif
 var ENVIRONMENT_IS_NODE = {{{ ENVIRONMENT === 'node' }}};
+#if EXPORT_ES6 && ENVIRONMENT_MAY_BE_WEB
+var ENVIRONMENT_IS_DENO = {{{ ENVIRONMENT === 'deno' }}};
+#endif
 var ENVIRONMENT_IS_SHELL = {{{ ENVIRONMENT === 'shell' }}};
 #else // ENVIRONMENT
 // Attempt to auto-detect the environment
@@ -99,6 +102,9 @@ var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function';
 // N.b. Electron.js environment is simultaneously a NODE-environment, but
 // also a web environment.
 var ENVIRONMENT_IS_NODE = typeof process == 'object' && typeof process.versions == 'object' && typeof process.versions.node == 'string';
+#if EXPORT_ES6 && ENVIRONMENT_MAY_BE_WEB // CommonJS is not usable in Deno
+var ENVIRONMENT_IS_DENO = typeof Deno == 'object';
+#endif
 #if AUDIO_WORKLET
 var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER && !ENVIRONMENT_IS_AUDIO_WORKLET;
 #else
@@ -310,6 +316,28 @@ if (ENVIRONMENT_IS_NODE) {
 
 } else
 #endif // ENVIRONMENT_MAY_BE_NODE
+#if ENVIRONMENT_MAY_BE_WEB && ENVIRONMENT_MAY_BE_DENO && EXPORT_ES6
+if (ENVIRONMENT_IS_DENO) { // Deno
+  scriptDirectory = new URL('./', import.meta.url).href; // includes trailing slash
+
+  // Note: we only need to implement the asynchronous variant of read,
+  // the read_ and readBinary functions are intentionally not implemented.
+
+  readAsync = (filename, onload, onerror) => {
+    if (isFileURI(filename)) {
+      // We need to re-wrap `file://` strings to URLs.
+      Deno.readFile(new URL(filename))
+        .then(onload)
+        .catch(onerror);
+    } else {
+      fetch(filename)
+        .then((response) => response.arrayBuffer())
+        .then(onload)
+        .catch(onerror);
+    }
+  };
+} else
+#endif // ENVIRONMENT_MAY_BE_WEB && ENVIRONMENT_MAY_BE_DENO && EXPORT_ES6
 #if ENVIRONMENT_MAY_BE_SHELL || ASSERTIONS
 if (ENVIRONMENT_IS_SHELL) {
 

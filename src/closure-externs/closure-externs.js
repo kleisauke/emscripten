@@ -264,3 +264,14 @@ var moduleRtn;
  */
 Navigator.prototype.webkitGetUserMedia = function(
     constraints, successCallback, errorCallback) {};
+
+/**
+ * Deno
+ */
+var Deno = {};
+
+/**
+ * @param {string|URL} path
+ * @return {Promise<Uint8Array>}
+ */
+Deno.readFile = function(path) {};
