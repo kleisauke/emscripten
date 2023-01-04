@@ -263,3 +263,14 @@ var sampleRate;
 var id;
 
 var moduleArg;
+
+/**
+ * Deno
+ */
+var Deno = {};
+
+/**
+ * @param {string|URL} path
+ * @return {Promise<Uint8Array>}
+ */
+Deno.readFile = function(path) {};
