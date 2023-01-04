@@ -261,3 +261,14 @@ var sampleRate;
  * Avoid closure minifying anything to "id". See #13965
  */
 var id;
+
+/**
+ * Deno
+ */
+var Deno = {};
+
+/**
+ * @param {string|URL} path
+ * @return {Promise<Uint8Array>}
+ */
+Deno.readFile = function(path) {};
