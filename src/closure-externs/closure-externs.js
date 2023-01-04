@@ -268,3 +268,8 @@ Navigator.prototype.webkitGetUserMedia = function(
  * @type {symbol}
  */
 Symbol.dispose;
+
+/**
+ * Deno
+ */
+var Deno = {};
