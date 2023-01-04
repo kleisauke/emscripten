@@ -53,7 +53,7 @@ DEFAULT_ASYNCIFY_EXPORTS = [
   '__main_argc_argv',
 ]
 
-VALID_ENVIRONMENTS = ('web', 'webview', 'worker', 'node', 'shell')
+VALID_ENVIRONMENTS = ('web', 'webview', 'worker', 'node', 'deno', 'shell')
 
 EXECUTABLE_EXTENSIONS = ['.wasm', '.html', '.js', '.mjs', '.out', '']
 
@@ -175,6 +175,7 @@ def setup_environment_settings():
   settings.ENVIRONMENT_MAY_BE_WEB = not settings.ENVIRONMENT or 'web' in settings.ENVIRONMENT
   settings.ENVIRONMENT_MAY_BE_WEBVIEW = not settings.ENVIRONMENT or 'webview' in settings.ENVIRONMENT
   settings.ENVIRONMENT_MAY_BE_NODE = not settings.ENVIRONMENT or 'node' in settings.ENVIRONMENT
+  settings.ENVIRONMENT_MAY_BE_DENO = not settings.ENVIRONMENT or 'deno' in settings.ENVIRONMENT
   settings.ENVIRONMENT_MAY_BE_SHELL = not settings.ENVIRONMENT or 'shell' in settings.ENVIRONMENT
   settings.ENVIRONMENT_MAY_BE_WORKER = not settings.ENVIRONMENT or 'worker' in settings.ENVIRONMENT
 
