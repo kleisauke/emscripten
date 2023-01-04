@@ -645,6 +645,7 @@ var LEGACY_VM_SUPPORT = false;
 // - 'worker'  - a web worker environment.
 // - 'worklet' - Audio Worklet environment.
 // - 'node'    - Node.js.
+// - 'deno'    - Deno.
 // - 'shell'   - a JS shell like d8, js, or jsc.
 //
 // This setting can be a comma-separated list of these environments, e.g.,
@@ -667,7 +668,7 @@ var LEGACY_VM_SUPPORT = false;
 // Note that by default we do not include the 'shell' environment since direct
 // usage of d8, spidermonkey and jsc is extremely rare.
 // [link]
-var ENVIRONMENT = ['web', 'webview', 'worker', 'node'];
+var ENVIRONMENT = ['web', 'webview', 'worker', 'node', 'deno'];
 
 // Enable this to support lz4-compressed file packages. They are stored compressed in memory, and
 // decompressed on the fly, avoiding storing the entire decompressed data in memory at once.
