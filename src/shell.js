@@ -68,6 +68,9 @@ var ENVIRONMENT_IS_WORKER = typeof WorkerGlobalScope != 'undefined';
 var ENVIRONMENT_IS_WORKER = {{{ ENVIRONMENT[0] === 'worker' }}};
 #endif
 var ENVIRONMENT_IS_NODE = {{{ ENVIRONMENT[0] === 'node' }}};
+#if EXPORT_ES6 && ENVIRONMENT_MAY_BE_WEB
+var ENVIRONMENT_IS_DENO = {{{ ENVIRONMENT[0] === 'deno' }}};
+#endif
 var ENVIRONMENT_IS_SHELL = {{{ ENVIRONMENT[0] === 'shell' }}};
 #else // ENVIRONMENT
 // Attempt to auto-detect the environment
@@ -76,6 +79,10 @@ var ENVIRONMENT_IS_WORKER = typeof WorkerGlobalScope != 'undefined';
 // N.b. Electron.js environment is simultaneously a NODE-environment, but
 // also a web environment.
 var ENVIRONMENT_IS_NODE = {{{ nodeDetectionCode() }}};
+#if EXPORT_ES6 && ENVIRONMENT_MAY_BE_WEB // CommonJS is not usable in Deno
+var ENVIRONMENT_IS_DENO = typeof Deno == 'object';
+ENVIRONMENT_IS_WEB ||= ENVIRONMENT_IS_DENO; // Deno uses standard web APIs.
+#endif
 #if AUDIO_WORKLET
 var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER && !ENVIRONMENT_IS_AUDIO_WORKLET;
 #else
