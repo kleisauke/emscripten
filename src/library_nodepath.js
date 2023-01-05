@@ -14,13 +14,13 @@
 addToLibrary({
   $PATH: {
     isAbs: (path) => nodePath['isAbsolute'](path),
-    normalize: (path) => nodePath['normalize'](path),
+    normalize: (path) => nodePath['posix']['normalize'](path),
     dirname: (path) => nodePath['dirname'](path),
     basename: (path) => nodePath['basename'](path),
     join: function () {
-      return nodePath['join'].apply(null, arguments);
+      return nodePath['posix']['join'].apply(null, arguments);
     },
-    join2: (l, r) => nodePath['join'](l, r),
+    join2: (l, r) => nodePath['posix']['join'](l, r),
   },
   // The FS-using parts are split out into a separate object, so simple path
   // usage does not require the FS.
