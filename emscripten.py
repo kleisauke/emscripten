@@ -325,8 +325,7 @@ def emscript(in_wasm, out_wasm, outfile_js, memfile):
     with webassembly.Module(in_wasm) as module:
       types = module.get_types()
       for imp in module.get_imports():
-        if imp.module not in ('GOT.mem', 'GOT.func'):
-          import_map[imp.field] = imp
+        import_map[imp.field] = imp
 
     for em_js_func, raw in metadata.emJsFuncs.items():
       c_sig = raw.split('<::>')[0].strip('()')
