@@ -131,6 +131,22 @@ var LibraryExceptions = {
     };
   },
 
+  $CppException__deps: [
+#if !DISABLE_EXCEPTION_CATCHING
+    '$getExceptionMessage',
+#endif
+    '$EmscriptenEH'],
+  $CppException: 'class CppException extends EmscriptenEH {\n' +
+                 '  constructor(excPtr) {\n' +
+                 '    super(excPtr)\n' +
+#if !DISABLE_EXCEPTION_CATCHING
+                 '    const excInfo = getExceptionMessage(excPtr);\n' +
+                 '    this.name = excInfo[0];\n' +
+                 '    this.message = excInfo[1];\n' +
+#endif
+                 '  }\n' +
+                 '}',
+
   $exception_addRef: function (info) {
 #if EXCEPTION_DEBUG
     dbg('exception_addRef ' + ptrToString(info.excPtr));
@@ -180,7 +196,7 @@ var LibraryExceptions = {
   // Here, we throw an exception after recording a couple of values that we need to remember
   // We also remember that it was the last exception thrown as we need to know that later.
   __cxa_throw__sig: 'vppp',
-  __cxa_throw__deps: ['$ExceptionInfo', '$exceptionLast', '$uncaughtExceptionCount'],
+  __cxa_throw__deps: ['$ExceptionInfo', '$exceptionLast', '$uncaughtExceptionCount', '$CppException'],
   __cxa_throw: function(ptr, type, destructor) {
 #if EXCEPTION_DEBUG
     dbg('__cxa_throw: ' + [ptrToString(ptr), type, ptrToString(destructor)]);
@@ -196,7 +212,7 @@ var LibraryExceptions = {
   // This exception will be caught twice, but while begin_catch runs twice,
   // we early-exit from end_catch when the exception has been rethrown, so
   // pop that here from the caught exceptions.
-  __cxa_rethrow__deps: ['$exceptionCaught', '$exceptionLast', '$uncaughtExceptionCount'],
+  __cxa_rethrow__deps: ['$exceptionCaught', '$exceptionLast', '$uncaughtExceptionCount', '$CppException'],
   __cxa_rethrow__sig: 'v',
   __cxa_rethrow: function() {
     var info = exceptionCaught.pop();
@@ -358,7 +374,7 @@ var LibraryExceptions = {
     return thrown;
   },
 
-  __resumeException__deps: ['$exceptionLast'],
+  __resumeException__deps: ['$exceptionLast', '$CppException'],
   __resumeException__sig: 'vp',
   __resumeException: function(ptr) {
 #if EXCEPTION_DEBUG
