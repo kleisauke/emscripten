@@ -285,7 +285,11 @@ var LibraryDylink = {
   // that originate from side modules since these are not known at JS
   // generation time.
   $createInvokeFunction__internal: true,
-  $createInvokeFunction__deps: ['$dynCall', 'setThrew'],
+  $createInvokeFunction__deps: ['$dynCall',
+#if !DISABLE_EXCEPTION_CATCHING || SUPPORT_LONGJMP == 'emscripten'
+    '$EmscriptenEH', 'setThrew'
+#endif
+  ],
   $createInvokeFunction: function(sig) {
     return function() {
       var sp = stackSave();
@@ -293,11 +297,14 @@ var LibraryDylink = {
         return dynCall(sig, arguments[0], Array.prototype.slice.call(arguments, 1));
       } catch(e) {
         stackRestore(sp);
-        // Exceptions thrown from C++ exception will be integer numbers.
-        // longjmp will throw the number Infinity. Re-throw other types of
-        // exceptions using a compact and fast check.
-        if (e !== e+0) throw e;
+        // Exceptions thrown from C++ and longjmps will be an instance of EmscriptenEH.
+        // Re-throw other types of exceptions.
+#if !DISABLE_EXCEPTION_CATCHING || SUPPORT_LONGJMP == 'emscripten'
+        if (!(e instanceof EmscriptenEH)) throw e;
         _setThrew(1, 0);
+#else
+        throw e;
+#endif
       }
     }
   },
