@@ -2050,8 +2050,9 @@ def phase_linker_setup(options, state, newargs):
         '__asyncify_data'
       ]
 
-    # Unconditional dependency in library_dylink.js
-    settings.REQUIRED_EXPORTS += ['setThrew']
+    # Conditional dependency in library_dylink.js
+    if not settings.DISABLE_EXCEPTION_CATCHING or settings.SUPPORT_LONGJMP == 'emscripten':
+      settings.REQUIRED_EXPORTS += ['setThrew']
 
     if settings.MINIMAL_RUNTIME:
       exit_with_error('MINIMAL_RUNTIME is not compatible with relocatable output')
@@ -2687,6 +2688,8 @@ def phase_linker_setup(options, state, newargs):
       # emitted because of library function usage, but by codegen itself.
       'setThrew',
       '__cxa_free_exception',
+      '__get_exception_message',
+      'free',
     ]
 
   if settings.ASYNCIFY:

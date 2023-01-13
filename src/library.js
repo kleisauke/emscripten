@@ -1238,13 +1238,19 @@ mergeInto(LibraryManager.library, {
     return _strptime(buf, format, tm); // no locale support yet
   },
 
+  // Base Emscripten EH error class
+  $EmscriptenEH: 'class EmscriptenEH extends Error {}',
+
   // ==========================================================================
   // setjmp.h
   // ==========================================================================
 
 #if SUPPORT_LONGJMP == 'emscripten'
+  $EmscriptenSjLj__deps: ['$EmscriptenEH'],
+  $EmscriptenSjLj: 'class EmscriptenSjLj extends EmscriptenEH {}',
+  _emscripten_throw_longjmp__deps: ['$EmscriptenSjLj'],
   _emscripten_throw_longjmp__sig: 'v',
-  _emscripten_throw_longjmp: function() { throw Infinity; },
+  _emscripten_throw_longjmp: function() { throw new EmscriptenSjLj; },
 #elif !SUPPORT_LONGJMP
 #if !INCLUDE_FULL_LIBRARY
   // These are in order to print helpful error messages when either longjmp of
@@ -3770,4 +3776,8 @@ DEFAULT_LIBRARY_FUNCS_TO_INCLUDE.push(
   '$cwrap',
   '$ExitStatus',
 );
+#endif
+
+#if SUPPORT_LONGJMP == 'emscripten' && ABORT_ON_WASM_EXCEPTIONS
+DEFAULT_LIBRARY_FUNCS_TO_INCLUDE.push('$EmscriptenSjLj');
 #endif
