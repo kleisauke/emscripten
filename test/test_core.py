@@ -9346,6 +9346,10 @@ NODEFS is no longer included by default; build with -lnodefs.js
     self.do_run_in_out_file_test('core/pthread/test_pthread_keepalive.c')
 
   @node_pthreads
+  def test_pthread_detach_weak(self):
+    self.do_run_in_out_file_test('core/pthread/test_pthread_detach_weak.c')
+
+  @node_pthreads
   def test_pthread_exit_main(self):
     self.do_run_in_out_file_test('core/pthread/test_pthread_exit_main.c')
 
