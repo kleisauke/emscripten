@@ -396,6 +396,7 @@ var LibraryPThread = {
         'wasmOffsetConverter': wasmOffsetConverter,
 #endif
 #if MAIN_MODULE
+        'dynamicLibraries': Module['dynamicLibraries'],
         // Share all modules that have been loaded so far.  New workers
         // won't start running threads until these are all loaded.
         'sharedModules': sharedModules,
