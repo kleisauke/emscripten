@@ -248,7 +248,7 @@ FS.createPreloadedFile = FS_createPreloadedFile;
 
       var bytesRead;
       if (seeking) {
-        bytesRead = __wasmfs_pwrite(stream.fd, dataBuffer, length, position);
+        bytesRead = __wasmfs_pwrite(stream.fd, dataBuffer, length, {{{ splitI64('position') }}});
       } else {
         bytesRead = __wasmfs_write(stream.fd, dataBuffer, length);
       }
