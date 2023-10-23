@@ -917,6 +917,12 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
 }
 #endif // WASM_ASYNC_COMPILATION
 
+#if MAIN_MODULE && PTHREADS
+// Map of modules to be shared with new threads.  This gets populated by the
+// main thread and shared with all new workers.
+var sharedModules = Module['sharedModules'] || [];
+#endif
+
 // Create the wasm instance.
 // Receives the wasm imports, returns the exports.
 function createWasm() {
@@ -960,6 +966,11 @@ function createWasm() {
 #if AUTOLOAD_DYLIBS
     if (metadata.neededDynlibs) {
       dynamicLibraries = metadata.neededDynlibs.concat(dynamicLibraries);
+    }
+#endif
+#if PTHREADS
+    if (ENVIRONMENT_IS_PTHREAD) {
+      dynamicLibraries = Object.keys(sharedModules);
     }
 #endif
     mergeLibSymbols(wasmExports, 'main')
