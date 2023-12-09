@@ -10,13 +10,11 @@ var ENVIRONMENT_IS_NODE = typeof process == 'object' && typeof process.versions 
 if (ENVIRONMENT_IS_NODE) {
   // Create as web-worker-like an environment as we can.
 
-  var nodeWorkerThreads = require('worker_threads');
-
-  var parentPort = nodeWorkerThreads.parentPort;
+  var { Worker, parentPort } = require('node:worker_threads');
 
   parentPort.on('message', (data) => typeof onmessage === "function" && onmessage({ data: data }));
 
-  var fs = require('fs');
+  var fs = require('node:fs');
 
   Object.assign(global, {
     self: global,
@@ -24,7 +22,7 @@ if (ENVIRONMENT_IS_NODE) {
     location: {
       href: __filename
     },
-    Worker: nodeWorkerThreads.Worker,
+    Worker,
     importScripts: (f) => (0, eval)(fs.readFileSync(f, 'utf8') + '//# sourceURL=' + f),
     postMessage: (msg) => parentPort.postMessage(msg),
     performance: global.performance || { now: Date.now },

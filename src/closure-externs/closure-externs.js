@@ -15,8 +15,10 @@
 var EMSCRIPTEN$IMPORT$META;
 var EMSCRIPTEN$AWAIT$IMPORT;
 
-// Don't minify createRequire
-var createRequire;
+// Don't minify ES6 static imports (i.e. when doing -sEXPORT_ES6 + -sENVIRONMENT=node)
+var nodePath;
+var fileURLToPath;
+var availableParallelism;
 
 // Don't minify startWorker which we use to start workers once the runtime is ready.
 /**

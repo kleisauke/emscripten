@@ -212,28 +212,56 @@ if (ENVIRONMENT_IS_NODE) {
   }
 #endif
 
-  // `require()` is no-op in an ESM module, use `createRequire()` to construct
-  // the require()` function.  This is only necessary for multi-environment
-  // builds, `-sENVIRONMENT=node` emits a static import declaration instead.
-  // TODO: Swap all `require()`'s with `import()`'s?
-#if EXPORT_ES6 && ENVIRONMENT_MAY_BE_WEB
-  const { createRequire } = await import('module');
-  /** @suppress{duplicate} */
-  var require = createRequire(import.meta.url);
-#endif
-  // These modules will usually be used on Node.js. Load them eagerly to avoid
-  // the complexity of lazy-loading.
-  var fs = require('fs');
-  var nodePath = require('path');
-
 #if EXPORT_ES6
+
+#if ENVIRONMENT_MAY_BE_WEB
+  // These modules will usually be used on Node.js. Load them eagerly to avoid
+  // the complexity of lazy-loading.  This is only necessary for multi-environment
+  // builds, `-sENVIRONMENT=node` emits a static import declaration instead.
+  var fs = await import('node:fs');
+  var nodePath = await import('node:path');
+  const { fileURLToPath }  = await import('node:url');
+#if PTHREADS || WASM_WORKERS
+  var { Worker } = await import('node:worker_threads');
+#if MIN_NODE_VERSION < 181400
+  const { cpus } = await import('node:os');
+  var availableParallelism = () => cpus().length;
+#else
+  var { availableParallelism } = await import('node:os');
+#endif // MIN_NODE_VERSION < 181400
+#endif // PTHREADS || WASM_WORKERS
+#if MIN_NODE_VERSION < 160000
+  // The performance global was added to node in v16.0.0:
+  // https://nodejs.org/api/globals.html#performance
+  var { performance } = await import('node:perf_hooks');
+#endif // MIN_NODE_VERSION < 160000
+#endif // ENVIRONMENT_MAY_BE_WEB
+
   // EXPORT_ES6 + ENVIRONMENT_IS_NODE always requires use of import.meta.url,
   // since there's no way getting the current absolute path of the module when
   // support for that is not available.
-  scriptDirectory = require('url').fileURLToPath(new URL('./', import.meta.url)); // includes trailing slash
+  scriptDirectory = fileURLToPath(new URL('./', import.meta.url)); // includes trailing slash
+
+#else // !EXPORT_ES6
+  var fs = require('node:fs');
+  var nodePath = require('node:path');
+#if PTHREADS || WASM_WORKERS
+  var { Worker } = require('node:worker_threads');
+#if MIN_NODE_VERSION < 181400
+  const { cpus } = require('node:os');
+  var availableParallelism = () => cpus().length;
 #else
+  var { availableParallelism } = require('node:os');
+#endif // MIN_NODE_VERSION < 181400
+#endif // PTHREADS || WASM_WORKERS
+#if MIN_NODE_VERSION < 160000
+  // The performance global was added to node in v16.0.0:
+  // https://nodejs.org/api/globals.html#performance
+  var { performance } = require('node:perf_hooks');
+#endif // MIN_NODE_VERSION < 160000
+
   scriptDirectory = __dirname + '/';
-#endif
+#endif // EXPORT_ES6
 
 #include "node_shell_read.js"
 
@@ -281,17 +309,6 @@ if (ENVIRONMENT_IS_NODE) {
   };
 
   Module['inspect'] = () => '[Emscripten Module object]';
-
-#if PTHREADS || WASM_WORKERS
-  let nodeWorkerThreads;
-  try {
-    nodeWorkerThreads = require('worker_threads');
-  } catch (e) {
-    console.error('The "worker_threads" module is not supported in this node.js build - perhaps a newer version is needed?');
-    throw e;
-  }
-  global.Worker = nodeWorkerThreads.Worker;
-#endif
 
 #if WASM == 2
   // If target shell does not support Wasm, load the JS version of the code.
@@ -444,13 +461,6 @@ if (!ENVIRONMENT_IS_AUDIO_WORKLET)
 }
 
 #if ENVIRONMENT_MAY_BE_NODE && PTHREADS
-if (ENVIRONMENT_IS_NODE) {
-  // Polyfill the performance object, which emscripten pthreads support
-  // depends on for good timing.
-  if (typeof performance == 'undefined') {
-    global.performance = require('perf_hooks').performance;
-  }
-}
 
 // Set up the out() and err() hooks, which are how we can print to stdout or
 // stderr, respectively.

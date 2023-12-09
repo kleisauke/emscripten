@@ -707,12 +707,11 @@ var LibraryPThread = {
 
   emscripten_has_threading_support: () => typeof SharedArrayBuffer != 'undefined',
 
-  emscripten_num_logical_cores: () => {
+  emscripten_num_logical_cores: () =>
 #if ENVIRONMENT_MAY_BE_NODE
-    if (ENVIRONMENT_IS_NODE) return require('os').cpus().length;
+    ENVIRONMENT_IS_NODE ? availableParallelism() :
 #endif
-    return navigator['hardwareConcurrency'];
-  },
+    navigator['hardwareConcurrency'],
 
   __emscripten_init_main_thread_js: (tb) => {
     // Pass the thread address to the native code where they stored in wasm

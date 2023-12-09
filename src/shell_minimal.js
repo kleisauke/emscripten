@@ -86,7 +86,7 @@ if (ENVIRONMENT_IS_NODE && ENVIRONMENT_IS_SHELL) {
 // Wasm or Wasm2JS loading:
 
 if (ENVIRONMENT_IS_NODE) {
-  var fs = require('fs');
+  var fs = require('node:fs');
 #if WASM == 2
   if (typeof WebAssembly != 'undefined') Module['wasm'] = fs.readFileSync(__dirname + '/{{{ TARGET_BASENAME }}}.wasm');
   else eval(fs.readFileSync(__dirname + '/{{{ TARGET_BASENAME }}}.wasm.js')+'');

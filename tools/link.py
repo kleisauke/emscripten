@@ -2281,11 +2281,28 @@ def node_es6_imports():
     return ''
 
   # Use static import declaration if we only target Node.js
-  return '''
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
+  static_import = '''import fs from 'node:fs';
+import * as nodePath from 'node:path';
+import { fileURLToPath } from 'node:url';
 '''
 
+  if settings.PTHREADS or settings.WASM_WORKERS:
+    static_import += '''import { Worker } from 'node:worker_threads';
+'''
+    if settings.MIN_NODE_VERSION < 181400:
+      static_import += '''import { cpus } from 'node:os';
+const availableParallelism = () => cpus().length;
+'''
+    else:
+      static_import += '''import { availableParallelism } from 'node:os';
+'''
+    if settings.MIN_NODE_VERSION < 160000:
+      # The performance global was added to node in v16.0.0:
+      # https://nodejs.org/api/globals.html#performance
+      static_import += '''import { performance } from 'node:perf_hooks';
+'''
+
+  return static_import
 
 def modularize():
   global final_js
