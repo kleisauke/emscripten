@@ -59,7 +59,11 @@ static mi_option_desc_t options[_mi_option_last] =
   { 0, UNINIT, MI_OPTION(verbose) },
 
   // the following options are experimental and not all combinations make sense.
+#ifdef __EMSCRIPTEN__
+  { 0, UNINIT, MI_OPTION(eager_commit) },               // always commit on-demand
+#else
   { 1, UNINIT, MI_OPTION(eager_commit) },               // commit per segment directly (4MiB)  (but see also `eager_commit_delay`)
+#endif
   { 2, UNINIT, MI_OPTION_LEGACY(arena_eager_commit,eager_region_commit) }, // eager commit arena's? 2 is used to enable this only on an OS that has overcommit (i.e. linux)
   { 1, UNINIT, MI_OPTION_LEGACY(purge_decommits,reset_decommits) },        // purge decommits memory (instead of reset) (note: on linux this uses MADV_DONTNEED for decommit)
   { 0, UNINIT, MI_OPTION_LEGACY(allow_large_os_pages,large_os_pages) },    // use large OS pages, use only with eager commit to prevent fragmentation of VMA's

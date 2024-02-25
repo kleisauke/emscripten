@@ -157,16 +157,16 @@ typedef int32_t  mi_ssize_t;
 
 // Main tuning parameters for segment and page sizes
 // Sizes for 64-bit (usually divide by two for 32-bit)
-#define MI_SEGMENT_SLICE_SHIFT            (13 + MI_INTPTR_SHIFT)         // 64KiB  (32KiB on 32-bit)
+#define MI_SEGMENT_SLICE_SHIFT            (9 + MI_INTPTR_SHIFT)         // 4KiB (2KiB on 32-bit)
 
 #if MI_INTPTR_SIZE > 4
-#define MI_SEGMENT_SHIFT                  ( 9 + MI_SEGMENT_SLICE_SHIFT)  // 32MiB
+#define MI_SEGMENT_SHIFT                  ( 9 + MI_SEGMENT_SLICE_SHIFT)  // 2MiB
 #else
-#define MI_SEGMENT_SHIFT                  ( 7 + MI_SEGMENT_SLICE_SHIFT)  // 4MiB on 32-bit
+#define MI_SEGMENT_SHIFT                  ( 7 + MI_SEGMENT_SLICE_SHIFT)  // 256KiB on 32-bit
 #endif
 
-#define MI_SMALL_PAGE_SHIFT               (MI_SEGMENT_SLICE_SHIFT)       // 64KiB
-#define MI_MEDIUM_PAGE_SHIFT              ( 3 + MI_SMALL_PAGE_SHIFT)     // 512KiB
+#define MI_SMALL_PAGE_SHIFT               (MI_SEGMENT_SLICE_SHIFT)       // 4KiB
+#define MI_MEDIUM_PAGE_SHIFT              ( 3 + MI_SMALL_PAGE_SHIFT)     // 32KiB
 
 
 // Derived constants
@@ -174,15 +174,15 @@ typedef int32_t  mi_ssize_t;
 #define MI_SEGMENT_ALIGN                  MI_SEGMENT_SIZE
 #define MI_SEGMENT_MASK                   ((uintptr_t)(MI_SEGMENT_ALIGN - 1))
 #define MI_SEGMENT_SLICE_SIZE             (MI_ZU(1)<< MI_SEGMENT_SLICE_SHIFT)
-#define MI_SLICES_PER_SEGMENT             (MI_SEGMENT_SIZE / MI_SEGMENT_SLICE_SIZE) // 1024
+#define MI_SLICES_PER_SEGMENT             (MI_SEGMENT_SIZE / MI_SEGMENT_SLICE_SIZE) // 512
 
 #define MI_SMALL_PAGE_SIZE                (MI_ZU(1)<<MI_SMALL_PAGE_SHIFT)
 #define MI_MEDIUM_PAGE_SIZE               (MI_ZU(1)<<MI_MEDIUM_PAGE_SHIFT)
 
-#define MI_SMALL_OBJ_SIZE_MAX             (MI_SMALL_PAGE_SIZE/4)   // 8KiB on 64-bit
-#define MI_MEDIUM_OBJ_SIZE_MAX            (MI_MEDIUM_PAGE_SIZE/4)  // 128KiB on 64-bit
+#define MI_SMALL_OBJ_SIZE_MAX             (MI_SMALL_PAGE_SIZE/4)   // 1KiB on 64-bit
+#define MI_MEDIUM_OBJ_SIZE_MAX            (MI_MEDIUM_PAGE_SIZE/4)  // 8KiB on 64-bit
 #define MI_MEDIUM_OBJ_WSIZE_MAX           (MI_MEDIUM_OBJ_SIZE_MAX/MI_INTPTR_SIZE)   
-#define MI_LARGE_OBJ_SIZE_MAX             (MI_SEGMENT_SIZE/2)      // 32MiB on 64-bit
+#define MI_LARGE_OBJ_SIZE_MAX             (MI_SEGMENT_SIZE/2)      // 1MiB on 64-bit
 #define MI_LARGE_OBJ_WSIZE_MAX            (MI_LARGE_OBJ_SIZE_MAX/MI_INTPTR_SIZE)
 
 // Maximum number of size classes. (spaced exponentially in 12.5% increments)
@@ -354,7 +354,7 @@ typedef enum mi_segment_kind_e {
 // ------------------------------------------------------
 
 #define MI_MINIMAL_COMMIT_SIZE      (1*MI_SEGMENT_SLICE_SIZE)            
-#define MI_COMMIT_SIZE              (MI_SEGMENT_SLICE_SIZE)              // 64KiB
+#define MI_COMMIT_SIZE              (MI_SEGMENT_SLICE_SIZE)              // 4KiB
 #define MI_COMMIT_MASK_BITS         (MI_SEGMENT_SIZE / MI_COMMIT_SIZE)  
 #define MI_COMMIT_MASK_FIELD_BITS    MI_SIZE_BITS
 #define MI_COMMIT_MASK_FIELD_COUNT  (MI_COMMIT_MASK_BITS / MI_COMMIT_MASK_FIELD_BITS)
