@@ -75,7 +75,7 @@ var LibraryPThread = {
         ) {
           t = _pthread_self();
         }
-        return 'w:' + (Module['workerID'] || 0) + ',t:' + ptrToString(t) + ': ';
+        return 'w:' + (workerID || 0) + ',t:' + ptrToString(t) + ': ';
       }
 
       // Prefix all err()/dbg() messages with the calling thread ID.
@@ -127,16 +127,6 @@ var LibraryPThread = {
     },
 
     initWorker() {
-#if MAYBE_CLOSURE_COMPILER
-      // worker.js is not compiled together with us, and must access certain
-      // things.
-      PThread['receiveObjectTransfer'] = PThread.receiveObjectTransfer;
-      PThread['threadInitTLS'] = PThread.threadInitTLS;
-#if !MINIMAL_RUNTIME
-      PThread['setExitStatus'] = PThread.setExitStatus;
-#endif
-#endif
-
 #if isSymbolNeeded('$noExitRuntime')
       // The default behaviour for pthreads is always to exit once they return
       // from their entry point (or call pthread_exit).  If we set noExitRuntime
@@ -440,14 +430,22 @@ var LibraryPThread = {
     // Creates a new web Worker and places it in the unused worker pool to wait for its use.
     allocateUnusedWorker() {
       var worker;
+      var workerOptions = {
+        {{{ EXPORT_ES6 ? "type: 'module'," : "" }}}
+#if ENVIRONMENT_MAY_BE_NODE
+        // This is the way that we signal to the node worker that it is hosting
+        // a pthread.  On the web we append `?pthread=1` to the URL instead.
+        'workerData': 'pthread',
+#endif
+      };
 #if MINIMAL_RUNTIME
-      var pthreadMainJs = Module['worker'] || './{{{ PTHREAD_WORKER_FILE }}}';
+      var pthreadMainJs = Module['worker'] || './{{{ TARGET_JS_NAME }}}';
 #else
 #if EXPORT_ES6 && USE_ES6_IMPORT_META
       // If we're using module output and there's no explicit override, use bundler-friendly pattern.
       if (!Module['locateFile']) {
 #if PTHREADS_DEBUG
-        dbg('Allocating a new web worker from ' + new URL('{{{ PTHREAD_WORKER_FILE }}}', import.meta.url));
+        dbg('Allocating a new web worker from ' + import.meta.url);
 #endif
 #if TRUSTED_TYPES
         // Use Trusted Types compatible wrappers.
@@ -455,19 +453,26 @@ var LibraryPThread = {
           var p = trustedTypes.createPolicy(
             'emscripten#workerPolicy1',
             {
-              createScriptURL: (ignored) => new URL('{{{ PTHREAD_WORKER_FILE }}}', import.meta.url);
+              createScriptURL: (ignored) => new URL(import.meta.url);
             }
           );
-          worker = new Worker(p.createScriptURL('ignored'), {type: 'module'});
+          worker = new Worker(p.createScriptURL('ignored'), workerOptions);
         } else
 #endif
-        worker = new Worker(new URL('{{{ PTHREAD_WORKER_FILE }}}', import.meta.url), {type: 'module'});
+        worker = new Worker(new URL(import.meta.url), workerOptions);
       } else {
 #endif
       // Allow HTML module to configure the location where the 'worker.js' file will be loaded from,
       // via Module.locateFile() function. If not specified, then the default URL 'worker.js' relative
       // to the main html file is loaded.
-      var pthreadMainJs = locateFile('{{{ PTHREAD_WORKER_FILE }}}');
+      var pthreadMainJs = locateFile('{{{ TARGET_JS_NAME }}}');
+#if ENVIRONMENT_MAY_BE_WEB
+      // On the web we use a URL parameter to determine if we are running a
+      // pthread or not.
+      if (ENVIRONMENT_IS_WEB) {
+        pthreadMainJs += '?pthread=1';
+      }
+#endif
 #endif
 #if PTHREADS_DEBUG
       dbg(`Allocating a new web worker from ${pthreadMainJs}`);
@@ -476,10 +481,10 @@ var LibraryPThread = {
       // Use Trusted Types compatible wrappers.
       if (typeof trustedTypes != 'undefined' && trustedTypes.createPolicy) {
         var p = trustedTypes.createPolicy('emscripten#workerPolicy2', { createScriptURL: (ignored) => pthreadMainJs });
-        worker = new Worker(p.createScriptURL('ignored'){{{ EXPORT_ES6 ? ", {type: 'module'}" : '' }}});
+        worker = new Worker(p.createScriptURL('ignored'), workerOptions);
       } else
 #endif
-      worker = new Worker(pthreadMainJs{{{ EXPORT_ES6 ? ", {type: 'module'}" : '' }}});
+      worker = new Worker(pthreadMainJs, workerOptions);
 #if EXPORT_ES6 && USE_ES6_IMPORT_META
     }
 #endif

@@ -7669,8 +7669,9 @@ void* operator new(size_t size) {
     post_js += '\n\n'
     create_file('extern-post.js', post_js)
 
-    # Export things on "TheModule". This matches the typical use pattern of the bound library
-    # being used as Box2D.* or Ammo.*, and we cannot rely on "Module" being always present (closure may remove it).
+    # Export things on "TheModule". This matches the typical use pattern of
+    # the bound library being used as Box2D.* or Ammo.*, and we cannot rely
+    # on "Module" being always present (closure may remove it).
     self.emcc_args += ['--post-js=glue.js', '--extern-post-js=extern-post.js']
     if mode == 'ALL':
       self.emcc_args += ['-sASSERTIONS']
@@ -7681,8 +7682,10 @@ void* operator new(size_t size) {
 
     self.do_run_in_out_file_test(test_file('webidl/test.cpp'), out_suffix='_' + mode, includes=['.'])
 
-  # Test that we can perform fully-synchronous initialization when combining WASM_ASYNC_COMPILATION=0 + PTHREAD_POOL_DELAY_LOAD=1.
-  # Also checks that PTHREAD_POOL_DELAY_LOAD=1 adds a pthreadPoolReady promise that users can wait on for pthread initialization.
+  # Test that we can perform fully-synchronous initialization when combining
+  # WASM_ASYNC_COMPILATION=0 + PTHREAD_POOL_DELAY_LOAD=1.  Also checks that
+  # PTHREAD_POOL_DELAY_LOAD=1 adds a pthreadPoolReady promise that users
+  # can wait on for pthread initialization.
   @node_pthreads
   def test_embind_sync_if_pthread_delayed(self):
     self.set_setting('WASM_ASYNC_COMPILATION', 0)
@@ -9223,7 +9226,7 @@ NODEFS is no longer included by default; build with -lnodefs.js
     self.set_setting('USE_OFFSET_CONVERTER')
     self.set_setting('MODULARIZE')
     self.set_setting('EXPORT_NAME', 'foo')
-    create_file('post.js', 'foo();')
+    create_file('post.js', 'if (typeof importScripts != "function") foo();')
     self.emcc_args += ['--extern-post-js', 'post.js']
     if '-g' in self.emcc_args:
       self.emcc_args += ['-DDEBUG']
@@ -9372,6 +9375,7 @@ NODEFS is no longer included by default; build with -lnodefs.js
     # test that Module.dynamicLibraries works with pthreads
     self.emcc_args += args
     self.emcc_args += ['--pre-js', 'pre.js']
+    self.emcc_args += ['--js-library', 'lib.js']
     # This test is for setting dynamicLibraries at runtime so we don't
     # want emscripten loading `liblib.so` automatically (which it would
     # do without this setting.
@@ -9381,22 +9385,29 @@ NODEFS is no longer included by default; build with -lnodefs.js
       Module['dynamicLibraries'] = ['liblib.so'];
     ''')
 
-    if args:
-      self.setup_node_pthreads()
-      create_file('post.js', '''
-        if (ENVIRONMENT_IS_PTHREAD) {
+    create_file('lib.js', '''
+      addToLibrary({
+        mainCallback: () => {
+#if PTHREADS
           err('sharedModules: ' + Object.keys(sharedModules));
           assert('liblib.so' in sharedModules);
           assert(sharedModules['liblib.so'] instanceof WebAssembly.Module);
-        }
-      ''')
-      self.emcc_args += ['--post-js', 'post.js']
+#endif
+        },
+      })
+    ''')
+
+    if args:
+      self.setup_node_pthreads()
 
     self.dylink_test(
       r'''
+        void mainCallback();
+
         #include <stdio.h>
         int side();
         int main() {
+          mainCallback();
           printf("result is %d\n", side());
           return 0;
         }
@@ -9404,7 +9415,8 @@ NODEFS is no longer included by default; build with -lnodefs.js
       r'''
         int side() { return 42; }
       ''',
-      'result is 42')
+      'result is 42',
+      force_c=True)
 
   # Tests the emscripten_get_exported_function() API.
   def test_get_exported_function(self):

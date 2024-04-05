@@ -146,15 +146,8 @@ function ready() {
 var _scriptDir = (typeof document != 'undefined' && document.currentScript) ? document.currentScript.src : undefined;
 #endif
 
-// MINIMAL_RUNTIME does not support --proxy-to-worker option, so Worker and Pthread environments
-// coincide.
-#if WASM_WORKERS
-var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function',
-  ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && !ENVIRONMENT_IS_WASM_WORKER;
-#else
-var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function',
-  ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER;
-#endif
+var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function';
+var ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && self.location.search;
 
 if (ENVIRONMENT_IS_WORKER) {
   _scriptDir = self.location.href;
@@ -173,6 +166,20 @@ if (ENVIRONMENT_IS_NODE) {
 
 var currentScriptUrl = typeof _scriptDir != 'undefined' ? _scriptDir : ((typeof document != 'undefined' && document.currentScript) ? document.currentScript.src : undefined);
 #endif // PTHREADS
+
+#if ENVIRONMENT_MAY_BE_NODE && (PTHREADS || WASM_WORKERS)
+if (ENVIRONMENT_IS_NODE) {
+  var worker_threads = require('worker_threads');
+  global.Worker = worker_threads.Worker;
+#if PTHREADS
+  // Under node we set `workerData` to `pthread` to signal that the worker
+  // is hosting a pthread.
+  if (worker_threads['workerData'] == 'pthread') {
+    ENVIRONMENT_IS_WORKER = ENVIRONMENT_IS_PTHREAD = true;
+  }
+#endif
+}
+#endif
 
 #if !SINGLE_FILE
 
@@ -214,3 +221,4 @@ if (ENVIRONMENT_IS_SHELL) {
 #endif
 
 #endif // !SINGLE_FILE
+
