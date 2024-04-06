@@ -38,6 +38,8 @@ addToLibrary({
     rewindArguments: {},
 #endif
     instrumentWasmImports(imports) {
+      if (imports.instrumented) return;
+      imports.instrumented = true;
 #if ASYNCIFY_DEBUG
       dbg('asyncify instrumenting imports');
 #endif

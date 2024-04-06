@@ -466,7 +466,7 @@ def get_worker_js_suffix():
   return '.worker.mjs' if settings.EXPORT_ES6 else '.worker.js'
 
 
-def setup_pthreads(target):
+def setup_pthreads():
   if settings.RELOCATABLE:
     # pthreads + dynamic linking has certain limitations
     if settings.SIDE_MODULE:
@@ -483,11 +483,15 @@ def setup_pthreads(target):
   # Functions needs to be exported from the module since they are used in worker.js
   settings.REQUIRED_EXPORTS += [
     '_emscripten_thread_free_data',
+    '_emscripten_thread_crashed',
     'emscripten_main_runtime_thread_id',
     'emscripten_main_thread_process_queued_calls',
     '_emscripten_run_on_main_thread_js',
     'emscripten_stack_set_limits',
   ]
+
+  if settings.EMBIND:
+    settings.REQUIRED_EXPORTS.append('_embind_initialize_bindings')
 
   if settings.MAIN_MODULE:
     settings.REQUIRED_EXPORTS += [
@@ -501,28 +505,6 @@ def setup_pthreads(target):
   settings.DEFAULT_LIBRARY_FUNCS_TO_INCLUDE += [
     '$exitOnMainThread',
   ]
-  # Some symbols are required by worker.js.
-  # Because emitDCEGraph only considers the main js file, and not worker.js
-  # we have explicitly mark these symbols as user-exported so that they will
-  # kept alive through DCE.
-  # TODO: Find a less hacky way to do this, perhaps by also scanning worker.js
-  # for roots.
-  worker_imports = [
-    '__emscripten_thread_init',
-    '__emscripten_thread_exit',
-    '__emscripten_thread_crashed',
-    '__emscripten_thread_mailbox_await',
-    '__emscripten_tls_init',
-    '_pthread_self',
-    'checkMailbox',
-  ]
-  if settings.EMBIND:
-    worker_imports.append('__embind_initialize_bindings')
-  settings.EXPORTED_FUNCTIONS += worker_imports
-  building.user_requested_exports.update(worker_imports)
-
-  # set location of worker.js
-  settings.PTHREAD_WORKER_FILE = unsuffixed_basename(target) + get_worker_js_suffix()
 
   if settings.MINIMAL_RUNTIME:
     building.user_requested_exports.add('exit')
@@ -535,9 +517,6 @@ def setup_pthreads(target):
   include_and_export('establishStackSpace')
   include_and_export('invokeEntryPoint')
   include_and_export('PThread')
-  if not settings.MINIMAL_RUNTIME:
-    # keepRuntimeAlive does not apply to MINIMAL_RUNTIME.
-    settings.EXPORTED_RUNTIME_METHODS += ['keepRuntimeAlive', 'ExitStatus', 'wasmMemory']
 
   if settings.MODULARIZE:
     if not settings.EXPORT_ES6 and settings.EXPORT_NAME == 'Module':
@@ -1350,7 +1329,7 @@ def phase_linker_setup(options, state, newargs):
     settings.EMBIND = 1
 
   if settings.PTHREADS:
-    setup_pthreads(target)
+    setup_pthreads()
     settings.JS_LIBRARIES.append((0, 'library_pthread.js'))
     if settings.PROXY_TO_PTHREAD:
       settings.PTHREAD_POOL_SIZE_STRICT = 0
@@ -1825,12 +1804,14 @@ def phase_linker_setup(options, state, newargs):
   if settings.SIDE_MODULE:
     # For side modules, we ignore all REQUIRED_EXPORTS that might have been added above.
     # They all come from either libc or compiler-rt.  The exception is __wasm_call_ctors
-    # which is a per-module export.
+    # and _emscripten_tls_init which are per-module exports.
     settings.REQUIRED_EXPORTS.clear()
 
   if not settings.STANDALONE_WASM:
     # in standalone mode, crt1 will call the constructors from inside the wasm
     settings.REQUIRED_EXPORTS.append('__wasm_call_ctors')
+  if settings.PTHREADS:
+    settings.REQUIRED_EXPORTS.append('_emscripten_tls_init')
 
   settings.PRE_JS_FILES = [os.path.abspath(f) for f in options.pre_js]
   settings.POST_JS_FILES = [os.path.abspath(f) for f in options.post_js]
@@ -2055,8 +2036,6 @@ def phase_final_emitting(options, state, target, wasm_target):
     return
 
   target_dir = os.path.dirname(os.path.abspath(target))
-  if settings.PTHREADS:
-    create_worker_file('src/worker.js', target_dir, settings.PTHREAD_WORKER_FILE)
 
   # Deploy the Wasm Worker bootstrap file as an output file (*.ww.js)
   if settings.WASM_WORKERS == 1:
@@ -2392,12 +2371,13 @@ var %(EXPORT_NAME)s = (() => {
   # will be able to reference it without aliasing/conflicting with the
   # Module variable name. This should happen even in MINIMAL_RUNTIME builds
   # for MODULARIZE and EXPORT_ES6 to work correctly.
-  if settings.AUDIO_WORKLET and settings.MODULARIZE:
+  if settings.AUDIO_WORKLET:
     src += f'globalThis.AudioWorkletModule = {settings.EXPORT_NAME};'
 
   # Export using a UMD style export, or ES6 exports if selected
   if settings.EXPORT_ES6:
     src += 'export default %s;' % settings.EXPORT_NAME
+
   elif not settings.MINIMAL_RUNTIME:
     src += '''\
 if (typeof exports === 'object' && typeof module === 'object')
@@ -2405,6 +2385,21 @@ if (typeof exports === 'object' && typeof module === 'object')
 else if (typeof define === 'function' && define['amd'])
   define([], () => %(EXPORT_NAME)s);
 ''' % {'EXPORT_NAME': settings.EXPORT_NAME}
+
+  if settings.PTHREADS:
+    src += '// When running as a pthread work construct a new instance on startup\n'
+    src += 'var isPthread;\n'
+    if settings.ENVIRONMENT_MAY_BE_WEB:
+      src += 'isPthread = globalThis.self?.location?.search;\n'
+    if settings.ENVIRONMENT_MAY_BE_NODE:
+      if settings.EXPORT_ES6:
+        src += '''
+import { workerData } from 'worker_threads';
+isPthread = workerData;
+'''
+      else:
+        src += "isPthread = require('worker_threads').workerData\n"
+    src += 'isPthread && %s();' % settings.EXPORT_NAME
 
   final_js += '.modular.js'
   write_file(final_js, src)

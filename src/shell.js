@@ -135,8 +135,10 @@ if (Module['ENVIRONMENT']) {
 // 2) We could be the application main() thread proxied to worker. (with Emscripten -sPROXY_TO_WORKER) (ENVIRONMENT_IS_WORKER == true, ENVIRONMENT_IS_PTHREAD == false)
 // 3) We could be an application pthread running in a worker. (ENVIRONMENT_IS_WORKER == true and ENVIRONMENT_IS_PTHREAD == true)
 
-// ENVIRONMENT_IS_PTHREAD=true will have been preset in worker.js. Make it false in the main runtime thread.
-var ENVIRONMENT_IS_PTHREAD = Module['ENVIRONMENT_IS_PTHREAD'] || false;
+// The way we signal to a worker that it is hosting a pthread is to append
+// ?phread=1 to the URL which means `self.location.search` will be set in this
+// case.
+var ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && self.location.search;
 #endif
 
 #if WASM_WORKERS
@@ -263,7 +265,15 @@ if (ENVIRONMENT_IS_NODE) {
   };
 
 #if PTHREADS || WASM_WORKERS
-  global.Worker = require('worker_threads').Worker;
+  var worker_threads = require('worker_threads');
+  global.Worker = worker_threads.Worker;
+#if PTHREADS
+  // Under node we set `workerData` to `pthread` to signal that the worker
+  // is hosting a pthread.
+  if (worker_threads['workerData'] == 'pthread') {
+    ENVIRONMENT_IS_WORKER = ENVIRONMENT_IS_PTHREAD = true;
+  }
+#endif
 #endif
 
 #if WASM == 2
@@ -389,9 +399,9 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
   if (!(typeof window == 'object' || typeof importScripts == 'function')) throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
 #endif
 
+#if PTHREADS && ENVIRONMENT_MAY_BE_NODE
   // Differentiate the Web Worker from the Node Worker case, as reading must
   // be done differently.
-#if PTHREADS && ENVIRONMENT_MAY_BE_NODE
   if (!ENVIRONMENT_IS_NODE)
 #endif
   {
