@@ -134,45 +134,37 @@ function ready() {
 #endif
 #endif
 
-// --pre-jses are emitted after the Module integration code, so that they can
-// refer to Module (if they choose; they can also define Module)
-{{{ preJS() }}}
-
 #if PTHREADS
-
-#if !MODULARIZE
-// In MODULARIZE mode _scriptDir needs to be captured already at the very top of the page immediately when the page is parsed, so it is generated there
-// before the page load. In non-MODULARIZE modes generate it here.
-var _scriptDir = (typeof document != 'undefined') ? document.currentScript?.src : undefined;
-#endif
-
 // MINIMAL_RUNTIME does not support --proxy-to-worker option, so Worker and Pthread environments
 // coincide.
-#if WASM_WORKERS
-var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function',
-  ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && !ENVIRONMENT_IS_WASM_WORKER;
-#else
-var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function',
-  ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER;
-#endif
+var ENVIRONMENT_IS_WORKER = typeof importScripts == 'function';
+var ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && self.name == 'em-pthread';
 
-if (ENVIRONMENT_IS_WORKER) {
-  _scriptDir = self.location.href;
-}
-#if ENVIRONMENT_MAY_BE_NODE
-else if (ENVIRONMENT_IS_NODE) {
-  _scriptDir = __filename;
-}
+#if !MODULARIZE
+// In MODULARIZE mode _scriptName needs to be captured already at the very top of the page immediately when the page is parsed, so it is generated there
+// before the page load. In non-MODULARIZE modes generate it here.
+var _scriptName = (typeof document != 'undefined') ? document.currentScript?.src : undefined;
 #endif
 
 #if ENVIRONMENT_MAY_BE_NODE
 if (ENVIRONMENT_IS_NODE) {
-  global.Worker = require('worker_threads').Worker;
-}
+  var worker_threads = require('worker_threads');
+  global.Worker = worker_threads.Worker;
+  ENVIRONMENT_IS_WORKER = !worker_threads.isMainThread;
+  // Under node we set `workerData` to `em-pthread` to signal that the worker
+  // is hosting a pthread.
+  ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && worker_threads['workerData'] == 'em-pthread'
+  _scriptName = __filename;
+} else
 #endif
-
-var currentScriptUrl = typeof _scriptDir != 'undefined' ? _scriptDir : ((typeof document != 'undefined') ? document.currentScript?.src : undefined);
+if (ENVIRONMENT_IS_WORKER) {
+  _scriptName = self.location.href;
+}
 #endif // PTHREADS
+
+// --pre-jses are emitted after the Module integration code, so that they can
+// refer to Module (if they choose; they can also define Module)
+{{{ preJS() }}}
 
 #if !SINGLE_FILE
 
@@ -214,3 +206,4 @@ if (ENVIRONMENT_IS_SHELL) {
 #endif
 
 #endif // !SINGLE_FILE
+
