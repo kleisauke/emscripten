@@ -447,17 +447,13 @@ var LibraryPThread = {
         var p = trustedTypes.createPolicy(
           'emscripten#workerPolicy1',
           {
-            createScriptURL: (ignored) => new URL("{{{ TARGET_JS_NAME }}}", import.meta.url)
+            createScriptURL: (ignored) => new URL(import.meta.url)
           }
         );
         worker = new Worker(p.createScriptURL('ignored'), workerOptions);
       } else
 #endif
-      // We need to generate the URL with import.meta.url as the base URL of the JS file
-      // instead of just using new URL(import.meta.url) because bundler's only recognize
-      // the first case in their bundling step. The latter ends up producing an invalid
-      // URL to import from the server (e.g., for webpack the file:// path).
-      worker = new Worker(new URL('{{{ TARGET_JS_NAME }}}', import.meta.url), workerOptions);
+      worker = new Worker(new URL(import.meta.url), workerOptions);
 #else
       var pthreadMainJs = currentScript;
 #if expectToReceiveOnModule('mainScriptUrlOrBlob')
