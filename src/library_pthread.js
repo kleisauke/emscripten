@@ -425,26 +425,24 @@ var LibraryPThread = {
       };
 #if EXPORT_ES6 && USE_ES6_IMPORT_META
       // If we're using module output, use bundler-friendly pattern.
+      // We need to generate the URL with import.meta.url as the base URL of the JS file
+      // instead of just using new URL(import.meta.url) because bundler's only recognize
+      // the first case in their bundling step. The latter ends up producing an invalid
+      // URL to import from the server (e.g., for webpack the file:// path).
+      var workerUrl = new URL("{{{ TARGET_JS_NAME }}}", import.meta.url);
 #if PTHREADS_DEBUG
       dbg('Allocating a new web worker from ' + import.meta.url);
 #endif
 #if TRUSTED_TYPES
       // Use Trusted Types compatible wrappers.
       if (typeof trustedTypes != 'undefined' && trustedTypes.createPolicy) {
-        var p = trustedTypes.createPolicy(
-          'emscripten#workerPolicy1',
-          {
-            createScriptURL: (ignored) => new URL("{{{ TARGET_JS_NAME }}}", import.meta.url)
-          }
-        );
+        var p = trustedTypes.createPolicy('emscripten#workerPolicy1', {
+          createScriptURL: (ignored) => workerUrl
+        });
         worker = new Worker(p.createScriptURL('ignored'), workerOptions);
       } else
 #endif
-      // We need to generate the URL with import.meta.url as the base URL of the JS file
-      // instead of just using new URL(import.meta.url) because bundler's only recognize
-      // the first case in their bundling step. The latter ends up producing an invalid
-      // URL to import from the server (e.g., for webpack the file:// path).
-      worker = new Worker(new URL('{{{ TARGET_JS_NAME }}}', import.meta.url), workerOptions);
+      worker = new Worker(workerUrl, workerOptions);
 #else
       var pthreadMainJs = currentScript;
 #if expectToReceiveOnModule('mainScriptUrlOrBlob')
