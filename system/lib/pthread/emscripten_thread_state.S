@@ -39,13 +39,6 @@ __set_thread_state:
   global.set supports_wait
   end_function
 
-# Semantically the same as testing "!ENVIRONMENT_IS_PTHREAD" in JS
-.globl emscripten_is_main_runtime_thread
-emscripten_is_main_runtime_thread:
-  .functype emscripten_is_main_runtime_thread () -> (i32)
-  global.get is_runtime_thread
-  end_function
-
 # Semantically the same as testing "!ENVIRONMENT_IS_WORKER" in JS
 .globl emscripten_is_main_browser_thread
 emscripten_is_main_browser_thread:
@@ -53,7 +46,14 @@ emscripten_is_main_browser_thread:
   global.get is_main_thread
   end_function
 
-# Semantically the same as testing "!ENVIRONMENT_IS_WEB" in JS
+# Semantically the same as testing "!ENVIRONMENT_IS_PTHREAD" in JS
+.globl emscripten_is_main_runtime_thread
+emscripten_is_main_runtime_thread:
+  .functype emscripten_is_main_runtime_thread () -> (i32)
+  global.get is_runtime_thread
+  end_function
+
+# Semantically the same as testing "!ENVIRONMENT_IS_AUDIO_WORKLET || !ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER" in JS
 .globl _emscripten_thread_supports_atomics_wait
 _emscripten_thread_supports_atomics_wait:
   .functype _emscripten_thread_supports_atomics_wait () -> (i32)

@@ -4,8 +4,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
+// Internal symbol
+extern "C" int _emscripten_thread_supports_atomics_wait(void);
+
 // Tests that
-// - _emscripten_thread_supports_atomics_wait() returns true in a Wasm Audio Worklet.
+// - _emscripten_thread_supports_atomics_wait() returns false in a Wasm Audio Worklet.
 // - emscripten_futex_wake() does not crash in a Wasm Audio Worklet.
 // - emscripten_futex_wait() does not crash in a Wasm Audio Worklet.
 // - emscripten_get_now() does not crash in a Wasm Audio Worklet.

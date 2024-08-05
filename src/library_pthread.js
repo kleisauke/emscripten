@@ -711,7 +711,11 @@ var LibraryPThread = {
       tb,
       /*is_main=*/!ENVIRONMENT_IS_WORKER,
       /*is_runtime=*/1,
-      /*can_block=*/!ENVIRONMENT_IS_WEB,
+#if AUDIO_WORKLET
+      /*can_block=*/!ENVIRONMENT_IS_AUDIO_WORKLET || !ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER,
+#else
+      /*can_block=*/!ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER,
+#endif
       /*default_stacksize=*/{{{ DEFAULT_PTHREAD_STACK_SIZE }}},
 #if PTHREADS_PROFILING
       /*start_profiling=*/true,
