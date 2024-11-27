@@ -21,6 +21,8 @@ See docs/process.md for more on how version tagging works.
 3.1.74 (in development)
 -----------------------
 
+- mimalloc was updated to microsoft/mimalloc@577246d. (#23027)
+
 3.1.73 - 11/28/24
 -----------------
 - libunwind was updated to LLVM 19.1.4. (#22394)
