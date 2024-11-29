@@ -1799,6 +1799,8 @@ class libmimalloc(MTLibrary):
     # build emmalloc as only a system allocator, without exporting itself onto
     # malloc/free in the global scope
     '-DEMMALLOC_NO_STD_EXPORTS',
+    # always commit on-demand
+    '-DMI_DEFAULT_EAGER_COMMIT=0',
     # build mimalloc with an override of malloc/free
     '-DMI_MALLOC_OVERRIDE',
     # TODO: add build modes that include debug checks 1,2,3
