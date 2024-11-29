@@ -1097,7 +1097,9 @@ function isEmscriptenHEAP(name) {
     case 'HEAP32':
     case 'HEAPU32':
     case 'HEAPF32':
-    case 'HEAPF64': {
+    case 'HEAPF64':
+    case 'HEAP64':
+    case 'HEAPU64': {
       return true;
     }
     default: {
@@ -1273,6 +1275,14 @@ function growableHeap(ast) {
           }
           case 'HEAPF64': {
             makeCallExpression(node, 'GROWABLE_HEAP_F64', []);
+            break;
+          }
+          case 'HEAP64': {
+            makeCallExpression(node, 'GROWABLE_HEAP_64', []);
+            break;
+          }
+          case 'HEAPU64': {
+            makeCallExpression(node, 'GROWABLE_HEAP_U64', []);
             break;
           }
           default: {

@@ -431,6 +431,12 @@ function exportRuntime() {
       'GROWABLE_HEAP_F32',
       'GROWABLE_HEAP_F64',
     );
+    if (WASM_BIGINT) {
+      runtimeElements.push(
+        'GROWABLE_HEAP_64',
+        'GROWABLE_HEAP_U64',
+      );
+    }
   }
   if (USE_OFFSET_CONVERTER) {
     runtimeElements.push('WasmOffsetConverter');

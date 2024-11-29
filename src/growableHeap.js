@@ -54,3 +54,15 @@ function GROWABLE_HEAP_F64() {
   }
   return HEAPF64;
 }
+function GROWABLE_HEAP_64() {
+  if (wasmMemory.buffer != HEAP8.buffer) {
+    updateMemoryViews();
+  }
+  return HEAP64;
+}
+function GROWABLE_HEAP_U64() {
+  if (wasmMemory.buffer != HEAP8.buffer) {
+    updateMemoryViews();
+  }
+  return HEAPU64;
+}

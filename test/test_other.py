@@ -10011,16 +10011,19 @@ function js() { var x = !<->5.; }
 int main() {
   EM_ASM({
     HEAP8.set([1,2,3], $0);
+    HEAP64[$0] = 0n;
   }, 1024);
 }''')
     self.run_process([EMCC, 'src.c', '-O2', '--profiling', '-pthread',
-                      '-sMAXIMUM_MEMORY=4GB', '-sALLOW_MEMORY_GROWTH'])
+                      '-sMAXIMUM_MEMORY=4GB', '-sALLOW_MEMORY_GROWTH', '-sWASM_BIGINT'])
+    output = read_file('a.out.js');
     # growable-heap must not interfere with heap unsigning, and vice versa:
     # we must have both applied, that is
     #   - GROWABLE_HEAP_I8() replaces HEAP8
+    #   - GROWABLE_HEAP_64() replaces HEAP64
     #   - $0 gets an >>> 0 unsigning
-    self.assertContained('GROWABLE_HEAP_I8().set([ 1, 2, 3 ], $0 >>> 0)',
-                         read_file('a.out.js'))
+    self.assertContained('GROWABLE_HEAP_I8().set([ 1, 2, 3 ], $0 >>> 0)', output)
+    self.assertContained('GROWABLE_HEAP_64()[$0 >>> 0] = 0n', output)
 
   @parameterized({
     '': ([],), # noqa
