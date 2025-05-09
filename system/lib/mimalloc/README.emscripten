@@ -1,5 +1,5 @@
 
-This contains mimalloc 8c532c32c3c96e5ba1f2283e032f69ead8add00f (v2.1.7) with
+This contains mimalloc 51c09e7b6a0ac5feeba998710f00c7dd7aa67bbf (v3.0.3) with
 Emscripten-specific changes.
 
 Origin: https://github.com/microsoft/mimalloc
