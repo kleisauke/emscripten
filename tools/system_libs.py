@@ -62,10 +62,8 @@ def get_base_cflags(build_dir, force_object_files=False, preprocess=True):
   flags = ['-g', '-sSTRICT', '-Werror']
   if settings.LTO and not force_object_files:
     flags += ['-flto=' + settings.LTO]
-  if settings.RELOCATABLE or settings.MAIN_MODULE:
+  if settings.RELOCATABLE:
     flags += ['-fPIC']
-    if preprocess:
-      flags += ['-DEMSCRIPTEN_DYNAMIC_LINKING']
   if settings.MEMORY64:
     flags += ['-sMEMORY64=' + str(settings.MEMORY64)]
 
@@ -768,6 +766,32 @@ class DebugLibrary(Library):
     return super().get_default_variation(is_debug=settings.ASSERTIONS, **kwargs)
 
 
+class DylinkLibrary(Library):
+  def __init__(self, **kwargs):
+    self.is_dylink = kwargs.pop('is_dylink')
+    super().__init__(**kwargs)
+
+  def get_cflags(self):
+    cflags = super().get_cflags()
+    if self.is_dylink:
+      cflags += ['-DEMSCRIPTEN_DYNAMIC_LINKING']
+    return cflags
+
+  def get_base_name(self):
+    name = super().get_base_name()
+    if self.is_dylink:
+      name += '-dylink'
+    return name
+
+  @classmethod
+  def vary_on(cls):
+    return super().vary_on() + ['is_dylink']
+
+  @classmethod
+  def get_default_variation(cls, **kwargs):
+    return super().get_default_variation(is_dylink=settings.RELOCATABLE or settings.MAIN_MODULE, **kwargs)
+
+
 class Exceptions(IntEnum):
   """
   This represents exception handling mode of Emscripten. Currently there are
@@ -1025,6 +1049,7 @@ class llvmlibc(DebugLibrary, AsanInstrumentedLibrary, MTLibrary):
 
 class libc(MuslInternalLibrary,
            DebugLibrary,
+           DylinkLibrary,
            AsanInstrumentedLibrary,
            MTLibrary):
   name = 'libc'
@@ -1361,7 +1386,7 @@ class libc(MuslInternalLibrary,
           'system.c',
         ])
 
-    if settings.RELOCATABLE or settings.MAIN_MODULE:
+    if self.is_dylink:
       libc_files += files_in_path(path='system/lib/libc', filenames=['dynlink.c'])
 
     libc_files += files_in_path(
@@ -1482,8 +1507,6 @@ class libwasm_workers(DebugLibrary):
       cflags += ['-O0']
     else:
       cflags += ['-DNDEBUG', '-Oz']
-    if settings.MAIN_MODULE:
-      cflags += ['-fPIC']
     if not self.is_stub:
       cflags += ['-sWASM_WORKERS']
     return cflags
@@ -2256,7 +2279,7 @@ class libjsmath(Library):
     return super().can_use() and settings.JS_MATH
 
 
-class libstubs(DebugLibrary):
+class libstubs(DebugLibrary, DylinkLibrary):
   name = 'libstubs'
   src_dir = 'system/lib/libc'
   includes = ['system/lib/libc/musl/src/include']

@@ -214,10 +214,7 @@ def lld_flags_for_executable(external_symbols):
 
   cmd.extend(f'--export-if-defined={e}' for e in settings.EXPORT_IF_DEFINED)
 
-  if settings.MAIN_MODULE:
-    cmd += ['-mllvm', '--relocation-model=pic']
-
-  if settings.MAIN_MODULE or settings.RELOCATABLE:
+  if settings.RELOCATABLE:
     cmd.append('--experimental-pic')
     cmd.append('--unresolved-symbols=import-dynamic')
     if not settings.WASM_BIGINT:
@@ -226,8 +223,6 @@ def lld_flags_for_executable(external_symbols):
       # shared libraries.  Because of this we need to disabled signature
       # checking of shared library functions in this case.
       cmd.append('--no-shlib-sigcheck')
-
-  if settings.RELOCATABLE:
     if settings.SIDE_MODULE:
       cmd.append('-shared')
     else:
