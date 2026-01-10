@@ -224,6 +224,12 @@ void _embind_register_class_class_property(
     const char* setterSignature,
     GenericFunction setter);
 
+void _embind_register_iterable(
+    TYPEID classType,
+    TYPEID elementType,
+    const char* sizeMethodName,
+    const char* getMethodName);
+
 EM_VAL _embind_create_inheriting_constructor(
     const char* constructorName,
     TYPEID wrapperType,
@@ -1594,6 +1600,19 @@ public:
         return *this;
     }
 
+    template<typename ElementType>
+    EMSCRIPTEN_ALWAYS_INLINE const class_& iterable(
+        const char* sizeMethodName,
+        const char* getMethodName) const {
+        using namespace internal;
+        _embind_register_iterable(
+            TypeID<ClassType>::get(),
+            TypeID<ElementType>::get(),
+            sizeMethodName,
+            getMethodName);
+        return *this;
+    }
+
     template<
         typename FieldType,
         typename... Policies,
@@ -1855,6 +1874,8 @@ typename std::enable_if<!std::is_arithmetic<T>::value, class_<std::vector<T, All
 register_vector(const char* name) {
     typedef std::vector<T, Allocator> VecType;
     register_optional<T>();
+    using VectorElementType =
+        typename internal::RawPointerTransformer<T, std::is_pointer<T>::value>::type;
 
     return class_<VecType>(name)
         .template constructor<>()
@@ -1863,7 +1884,7 @@ register_vector(const char* name) {
         .function("size", internal::VectorAccess<VecType>::size, allow_raw_pointers())
         .function("get", internal::VectorAccess<VecType>::get, allow_raw_pointers())
         .function("set", internal::VectorAccess<VecType>::set, allow_raw_pointers())
-        ;
+        .template iterable<VectorElementType>("size", "get");
 }
 
 template<typename T>
