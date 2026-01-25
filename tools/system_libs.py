@@ -1882,7 +1882,7 @@ class libmimalloc(MTLibrary):
     # build mimalloc with an override of malloc/free
     '-DMI_MALLOC_OVERRIDE',
     # TODO: add build modes that include debug checks 1,2,3
-    '-DMI_DEBUG=0',
+    '-DMI_DEBUG=3',
     # disable `assert()` in the underlying emmalloc allocator
     '-DNDEBUG',
     # enable use of `__builtin_thread_pointer()`
