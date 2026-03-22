@@ -10,6 +10,7 @@
 
 #include "backend.h"
 #include "file.h"
+#include <fcntl.h>
 #include <emscripten/threading.h>
 
 namespace wasmfs {
@@ -18,7 +19,13 @@ namespace wasmfs {
 class MemoryDataFile : public DataFile {
   std::vector<uint8_t> buffer;
 
-  int open(oflags_t) override { return 0; }
+  int open(oflags_t flags) override {
+    // If O_TRUNC, truncate the buffer if possible.
+    if (flags & O_TRUNC) {
+      buffer = {};
+    }
+    return 0;
+  }
   int close() override { return 0; }
   ssize_t write(const uint8_t* buf, size_t len, off_t offset) override;
   ssize_t read(uint8_t* buf, size_t len, off_t offset) override;
