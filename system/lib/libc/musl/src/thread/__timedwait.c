@@ -58,7 +58,7 @@ int __timedwait_cp(volatile int *addr, int val,
 	}
 
 #ifdef __EMSCRIPTEN__
-	double msecs_to_sleep = top ? (top->tv_sec * 1000 + top->tv_nsec / 1000000.0) : INFINITY;
+	double msecs_to_sleep = top ? (top->tv_sec * 1000.0 + top->tv_nsec / 1000000.0) : INFINITY;
 	r = -emscripten_futex_wait((void*)addr, val, msecs_to_sleep);
 #else
 	r = -__futex4_cp(addr, FUTEX_WAIT|priv, val, top);
