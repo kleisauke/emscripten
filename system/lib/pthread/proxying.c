@@ -163,12 +163,8 @@ static bool do_proxy(em_proxying_queue* q, pthread_t target_thread, task t) {
   }
 
   bool ret = em_task_queue_send(tasks, t);
-  // When proxying work to the main thread using the system queue we have a
-  // special case in that we need to wake the target thread in case it is in
-  // `emscripten_futex_wait`.
-  if (ret && is_system_queue &&
-      pthread_equal(target_thread, emscripten_main_runtime_thread_id())) {
-    DBG("waking main runtime thread using _emscripten_thread_notify");
+  if (ret) {
+    // Wake up the target thread in case it's blocked in futex_wait
     _emscripten_thread_notify(target_thread);
   }
   return ret;
