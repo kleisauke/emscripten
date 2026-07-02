@@ -206,3 +206,9 @@ var os = {};
 AudioWorkletProcessor.parameterDescriptors;
 
 var scheduler = {};
+
+/** @type {boolean} */
+ArrayBuffer.prototype.resizable;
+
+/** @type {boolean} */
+SharedArrayBuffer.prototype.growable;
