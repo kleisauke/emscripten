@@ -1129,6 +1129,17 @@ function getHeapViewOrCopy(heap, start, end) {
   return `${heap}.buffer.resizable ? ${copy} : ${view}`;
 }
 
+function getHeapMax() {
+  if (!ALLOW_MEMORY_GROWTH) return 'HEAPU8.length';
+  if (MEMORY64) return MAXIMUM_MEMORY;
+
+  // Stay one Wasm page short of 4GB: while e.g. Chrome is able to allocate
+  // full 4GB Wasm memories, the size will wrap back to 0 bytes in Wasm side
+  // for any code that deals with heap sizes, which would require special
+  // casing all heap size related code to treat 0 specially.
+  return Math.min(MAXIMUM_MEMORY, FOUR_GB - WASM_PAGE_SIZE);
+}
+
 function getEntryFunction() {
   var entryFunction = 'main';
   if (STANDALONE_WASM) {
@@ -1271,6 +1282,7 @@ addToCompileTimeContext({
   getHeapOffset,
   getNativeTypeSize,
   getHeapViewOrCopy,
+  getHeapMax,
   hasExportedSymbol,
   isSymbolNeeded,
   makeDynCall,

@@ -414,12 +414,7 @@ var LibraryHtml5WebGL = {
   emscripten_supports_offscreencanvas: () =>
     // TODO: Add a new build mode, e.g. OFFSCREENCANVAS_SUPPORT=2, which
     // necessitates OffscreenCanvas support at build time, and "return 1;" here in that build mode.
-#if OFFSCREENCANVAS_SUPPORT
-    typeof OffscreenCanvas != 'undefined'
-#else
-    0
-#endif
-  ,
+    {{{ OFFSCREENCANVAS_SUPPORT ? "typeof OffscreenCanvas != 'undefined'" : '0' }}},
 
   $registerWebGlEventCallback__deps: ['$JSEvents', '$findEventTarget'],
   $registerWebGlEventCallback: (target, userData, useCapture, callbackfunc, eventTypeId, eventTypeString, targetThread) => {

@@ -5,17 +5,26 @@
  */
 
 addToLibrary({
+  $NODEFS__deps: [
 #if WASMFS
-  $NODEFS__deps: ['$stringToUTF8OnStack', 'wasmfs_create_node_backend'],
+    '$stringToUTF8OnStack',
+    'wasmfs_create_node_backend',
+#else
+    '$FS',
+    '$PATH', 
+    '$ERRNO_CODES', 
+    '$mmapAlloc',
+#endif
+  ], 
+#if !WASMFS
+  $NODEFS__postset: 'if (ENVIRONMENT_IS_NODE) { NODEFS.staticInit(); }',
+#endif
   $NODEFS: {
+#if WASMFS
     createBackend(opts) {
       return _wasmfs_create_node_backend(stringToUTF8OnStack(opts.root));
-    }
-  }
+    },
 #else
-  $NODEFS__deps: ['$FS', '$PATH', '$ERRNO_CODES', '$mmapAlloc'],
-  $NODEFS__postset: 'if (ENVIRONMENT_IS_NODE) { NODEFS.staticInit(); }',
-  $NODEFS: {
     isWindows: false,
     staticInit() {
       NODEFS.isWindows = !!process.platform.match(/^win/);
@@ -319,6 +328,6 @@ addToLibrary({
         return 0;
       }
     }
-  }
 #endif
+  }
 });

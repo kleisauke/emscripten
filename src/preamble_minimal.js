@@ -33,6 +33,9 @@ var tempI64;
 // WASM == 2 includes wasm2js.js separately.
 #include "wasm2js.js"
 #if !WASM2JS
+#if 0 // STRIP_PREPROCESS
+{
+#endif
 }
 #endif
 #endif

@@ -30,12 +30,12 @@ function exitRuntime(ret) {
 }
 #endif
 
-{{{ globalThis.argc_argv = function(condition) {
+{{{
+  globalThis.argc_argv = (condition) => {
     if (!MAIN_READS_PARAMS) return '';
     return `argc, ${to64('argv')}`;
-  }
+  };
   globalThis.HEAPptr = MEMORY64 ? 'HEAPU64' : 'HEAPU32';
-  null;
 }}}
 
 function run() {
@@ -213,10 +213,16 @@ instantiatePromise =
   ? WebAssembly.instantiateStreaming(fetch({{{ moduleUrl }}}), imports)
   : WebAssembly.instantiate(Module['wasm'], imports)).then((output) => {
 #else
+#if 0 // STRIP_PREPROCESS
+  });
+#endif
 #if MODULARIZE || AUDIO_WORKLET
 instantiatePromise =
 #endif
 WebAssembly.instantiateStreaming(fetch({{{ moduleUrl }}}), imports).then((output) => {
+#endif
+#if 0 // STRIP_PREPROCESS
+  });
 #endif
 
 #else // Non-streaming instantiation
@@ -282,23 +288,23 @@ WebAssembly.instantiate(Module['wasm'], imports).then(/** @suppress {missingProp
 
   initRuntime(wasmExports);
 
-{{{ function waitOnStartupPromisesAndEmitReady() {
-  var promises = [];
-  if (PTHREADS && PTHREAD_POOL_SIZE) {
-    promises.push('PThread.loadWasmModuleToAllWorkers()');
-  }
-  if (LOAD_SOURCE_MAP) {
-    promises.push('getSourceMapAsync().then(json=>{receiveSourceMapJSON(json)})');
-  }
-  if (promises.length == 0) {
-    return 'ready();'
-  } else if (promises.length == 1) {
-    return `${promises[0]}.then(ready);`;
-  } else {
-    return `Promise.all(${', '.join(promises)}).then(ready);`
-  }
-}
-null;
+{{{
+  const waitOnStartupPromisesAndEmitReady = () => {
+    var promises = [];
+    if (PTHREADS && PTHREAD_POOL_SIZE) {
+      promises.push('PThread.loadWasmModuleToAllWorkers()');
+    }
+    if (LOAD_SOURCE_MAP) {
+      promises.push('getSourceMapAsync().then(json=>{receiveSourceMapJSON(json)})');
+    }
+    if (promises.length == 0) {
+      return 'ready();'
+    } else if (promises.length == 1) {
+      return `${promises[0]}.then(ready);`;
+    } else {
+      return `Promise.all(${', '.join(promises)}).then(ready);`
+    }
+  };
 }}}
 
 #if PTHREADS && PTHREAD_POOL_SIZE && PTHREAD_POOL_DELAY_LOAD

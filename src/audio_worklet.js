@@ -14,11 +14,11 @@
 
 if (ENVIRONMENT_IS_AUDIO_WORKLET) {
 
+function createWasmAudioWorkletProcessor(
 #if AUDIO_WORKLET_SUPPORT_AUDIO_PARAMS
-function createWasmAudioWorkletProcessor(audioParams) {
-#else
-function createWasmAudioWorkletProcessor() {
+  audioParams
 #endif
+) {
   class WasmAudioWorkletProcessor extends AudioWorkletProcessor {
     constructor(args) {
       super();
@@ -89,12 +89,16 @@ function createWasmAudioWorkletProcessor() {
      *
      * @param {Object} parameters
      */
-#if AUDIO_WORKLET_SUPPORT_AUDIO_PARAMS
-    process(inputList, outputList, parameters) {
-#else
+#if !AUDIO_WORKLET_SUPPORT_AUDIO_PARAMS
     /** @suppress {checkTypes} */
-    process(inputList, outputList) {
 #endif
+    process(
+      inputList,
+      outputList,
+#if AUDIO_WORKLET_SUPPORT_AUDIO_PARAMS
+      parameters
+#endif
+    ) {
 
 #if ALLOW_MEMORY_GROWTH && GROWABLE_ARRAYBUFFERS != 2
       // Recreate the output views if the heap has changed

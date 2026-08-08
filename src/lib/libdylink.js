@@ -1302,11 +1302,7 @@ var LibraryDylink = {
   _dlopen_js__deps: ['$dlopenInternal'],
   _dlopen_js__async: 'auto',
   _dlopen_js: (handle) =>
-#if ASYNCIFY
-    dlopenInternal(handle, { loadAsync: true }),
-#else
-    dlopenInternal(handle, { loadAsync: false }),
-#endif
+    dlopenInternal(handle, { loadAsync: {{{ ASYNCIFY ? 'true' : 'false' }}} }),
 
   // Async version of dlopen.
   _emscripten_dlopen_js__deps: ['$dlopenInternal', '$callUserCallback', '$dlSetError'],

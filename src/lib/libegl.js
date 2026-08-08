@@ -340,6 +340,9 @@ var LibraryEGL = {
 #if MAX_WEBGL_VERSION >= 2
     if (glesContextVersion < 2 || glesContextVersion > 3) {
 #else
+#if 0 // STRIP_PREPROCESS
+    } else
+#endif
     if (glesContextVersion != 2) {
 #endif
 #if GL_ASSERTIONS

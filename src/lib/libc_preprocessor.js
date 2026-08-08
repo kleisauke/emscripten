@@ -132,6 +132,9 @@ addToLibrary({
               // Firefox only introduced Object.hasOwn() in Firefox 92.
               if (defs.hasOwnProperty(symbol)) {
 #else
+#if 0 // STRIP_PREPROCESS
+              } else
+#endif
               if (Object.hasOwn(defs, symbol)) {
 #endif
                 var pp = defs[symbol], expanded;

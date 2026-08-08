@@ -70,11 +70,11 @@ FS.staticInit();`;
 #if expectToReceiveOnModule('logReadFiles')
     readFiles: {},
 #endif
+    ErrnoError: class
 #if ASSERTIONS
-    ErrnoError: class extends Error {
-#else
-    ErrnoError: class {
+      extends Error
 #endif
+    {
       name = 'ErrnoError';
       // We set the `name` property to be able to identify `FS.ErrnoError`
       // - the `name` is a standard ECMA-262 property of error objects. Kind of good to have it anyway.

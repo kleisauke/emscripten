@@ -19,11 +19,10 @@ var mainArgs = undefined;
 #endif
 
 #if HAS_MAIN
+{{{ asyncIf(ASYNCIFY == 2) }}}function callMain(
 #if MAIN_READS_PARAMS
-{{{ asyncIf(ASYNCIFY == 2) }}}function callMain(args = []) {
-#else
-{{{ asyncIf(ASYNCIFY == 2) }}}function callMain() {
-#endif
+  args = []
+) {
 #if ASSERTIONS
 #if '$runDependencies' in addedLibraryItems
   assert(runDependencies == 0, 'cannot call main when async dependencies remain! (listen on Module["onRuntimeInitialized"])');
@@ -114,7 +113,11 @@ function stackCheckInit() {
 }
 #endif
 
-{{{ asyncIf(MODULARIZE || ASYNCIFY == 2 || expectToReceiveOnModule('setStatus') || '$runDependencies' in addedLibraryItems) }}}function run({{{ MAIN_READS_PARAMS ? 'args = programArgs' : '' }}}) {
+{{{ asyncIf(MODULARIZE || ASYNCIFY == 2 || expectToReceiveOnModule('setStatus') || '$runDependencies' in addedLibraryItems) }}}function run(
+#if MAIN_READS_PARAMS
+  args = programArgs
+#endif
+) {
 #if ASSERTIONS
   assert(!calledRun);
   calledRun = true;
@@ -257,6 +260,9 @@ var initCalled = false;
 #if AUTO_INIT && !WASM_ESM_INTEGRATION
 // In AUTO_INIT mode `init` is not exported; we self-initialize below.
 async function init() {
+#if 0 // STRIP_PREPROCESS
+  }
+#endif
 #else
 export default async function init(moduleArg = {}) {
 #endif

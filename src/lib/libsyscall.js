@@ -384,6 +384,9 @@ var SyscallsLibrary = {
     // connection's client), so only undefined means not connected there.
     if (sock.family == {{{ cDefs.AF_UNIX }}} ? sock.daddr === undefined : !sock.daddr) {
 #else
+#if 0 // STRIP_PREPROCESS
+    } else
+#endif
     if (!sock.daddr) {
 #endif
       return -{{{ cDefs.ENOTCONN }}}; // The socket is not connected.

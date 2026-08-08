@@ -351,7 +351,7 @@ LibraryJSEventLoop = {
       };
     } else {
 #if ASSERTIONS
-      assert(mode == {{{ cDefs.EM_TIMING_SETIMMEDIATE}}});
+      assert(mode == {{{ cDefs.EM_TIMING_SETIMMEDIATE }}});
 #endif
       if (!MainLoop.setImmediate) {
         if (globalThis.scheduler) {

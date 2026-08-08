@@ -172,25 +172,7 @@ addToLibrary({
 #endif
 
   // Returns a pointer ('p'), which means an i32 on wasm32 and an i64 wasm64
-  // We have a separate JS version `getHeapMax()` which can be called directly
-  // avoiding any wrapper added for wasm64.
-  emscripten_get_heap_max__deps: ['$getHeapMax'],
-  emscripten_get_heap_max: () => getHeapMax(),
-
-  $getHeapMax: () =>
-#if ALLOW_MEMORY_GROWTH
-#if MEMORY64 == 1
-    {{{ MAXIMUM_MEMORY }}},
-#else
-    // Stay one Wasm page short of 4GB: while e.g. Chrome is able to allocate
-    // full 4GB Wasm memories, the size will wrap back to 0 bytes in Wasm side
-    // for any code that deals with heap sizes, which would require special
-    // casing all heap size related code to treat 0 specially.
-    {{{ Math.min(MAXIMUM_MEMORY, FOUR_GB - WASM_PAGE_SIZE) }}},
-#endif
-#else // no growth
-    HEAPU8.length,
-#endif
+  emscripten_get_heap_max: () => {{{ getHeapMax() }}},
 
 #if ABORTING_MALLOC
   $abortOnCannotGrowMemory: (requestedSize) => {
@@ -243,7 +225,7 @@ addToLibrary({
 #if ASSERTIONS == 2
     'emscripten_get_now',
 #endif
-    '$getHeapMax',
+    'emscripten_get_heap_max',
     '$alignMemory',
     '$growMemory',
 #endif
@@ -296,7 +278,7 @@ addToLibrary({
 
     // A limit is set for how much we can grow. We should not exceed that
     // (the wasm binary specifies it, so if we tried, we'd fail anyhow).
-    var maxHeapSize = getHeapMax();
+    var maxHeapSize = emscripten_get_heap_max();
     if (requestedSize > maxHeapSize) {
 #if ASSERTIONS
       err(`Cannot enlarge memory, requested ${requestedSize} bytes, but the limit is ${maxHeapSize} bytes!`);
@@ -420,12 +402,7 @@ addToLibrary({
   // JavaScript `abort` helper in order to implement this function, but we use a
   // distinct name here to avoid confusing the two.
   _abort_js: () =>
-#if ASSERTIONS
-    abort('native code called abort()'),
-#else
-    abort(''),
-#endif
-#endif
+    abort({{{ ASSERTIONS ? 'native code called abort()' : '' }}}),
 
   // This object can be modified by the user during startup, which affects
   // the initial values of the environment accessible by getenv.
@@ -2101,6 +2078,9 @@ addToLibrary({
 #if EXIT_RUNTIME
     if (runtimeExited || ABORT) {
 #else
+#if 0 // STRIP_PREPROCESS
+    } else
+#endif
     if (ABORT) {
 #endif
 #if ASSERTIONS

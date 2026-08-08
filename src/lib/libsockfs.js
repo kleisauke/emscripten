@@ -110,9 +110,9 @@ addToLibrary({
         recv_queue: [],
 #if SOCKET_WEBRTC
 #elif NODERAWSOCKETS
-        sock_ops: nodeSockOps
+        sock_ops: nodeSockOps,
 #else
-        sock_ops: SOCKFS.websocket_sock_ops
+        sock_ops: SOCKFS.websocket_sock_ops,
 #endif
       };
 

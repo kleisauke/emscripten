@@ -768,11 +768,11 @@ function getWasmImports() {
   // Load the wasm module and create an instance of using native support in the JS engine.
   // handle a generated wasm instance, receiving its exports and
   // performing other necessary setup
+  {{{ asyncIf(MAIN_MODULE) }}}function receiveInstance(instance
 #if SHARED_MEMORY || MAIN_MODULE
-  {{{ asyncIf(MAIN_MODULE) }}}function receiveInstance(instance, module) {
-#else
-  {{{ asyncIf(MAIN_MODULE) }}}function receiveInstance(instance) {
+    , module
 #endif
+    ) {
 #if RUNTIME_DEBUG
     dbg('receiveInstance')
 #endif

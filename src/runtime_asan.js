@@ -13,11 +13,11 @@
 // must access things directly.
 
 function _asan_js_check_index(arr, index, asanFn) {
+  if (runtimeInitialized
 #if EXIT_RUNTIME
-  if (runtimeInitialized && !runtimeExited) {
-#else
-  if (runtimeInitialized) {
+    && !runtimeExited
 #endif
+  ) {
     const elemSize = arr.BYTES_PER_ELEMENT;
     asanFn(index * elemSize, elemSize);
   }

@@ -34,6 +34,9 @@ function startWasmWorker(props) {
 #if AUDIO_WORKLET
 if (ENVIRONMENT_IS_WASM_WORKER && !ENVIRONMENT_IS_AUDIO_WORKLET) {
 #else
+#if 0 // STRIP_PREPROCESS
+} else
+#endif
 if (ENVIRONMENT_IS_WASM_WORKER) {
 #endif
 #if RUNTIME_DEBUG

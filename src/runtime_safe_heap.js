@@ -25,6 +25,9 @@ function SAFE_HEAP_INDEX(arr, idx, action) {
 #if EXIT_RUNTIME
   if (runtimeInitialized && !runtimeExited) {
 #else
+#if 0 // STRIP_PREPROCESS
+  } else
+#endif
   if (runtimeInitialized) {
 #endif
     var brk = _sbrk(0);

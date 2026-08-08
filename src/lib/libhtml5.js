@@ -382,10 +382,11 @@ var LibraryHTML5 = {
      || specialHTMLTargets[target]
     // If that is not found either, query via the regular DOM selector.
 #if PTHREADS
-     || globalThis.document?.querySelector(target);
+     || globalThis.document?.querySelector(target)
 #else
-     || document.querySelector(target);
+     || document.querySelector(target)
 #endif
+    ;
   },
 #else
   $findCanvasEventTarget: '$findEventTarget',
@@ -2134,6 +2135,9 @@ var LibraryHTML5 = {
     if (canvas.offscreenCanvas || !canvas.controlTransferredOffscreen) {
       if (canvas.offscreenCanvas) canvas = canvas.offscreenCanvas;
 #else
+#if 0 // STRIP_PREPROCESS
+    } else
+#endif
     if (!canvas.controlTransferredOffscreen) {
 #endif
       var autoResizeViewport = false;
