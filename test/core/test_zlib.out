@@ -1,4 +1,7 @@
+zlib version 1.4 = 0x1400, compile flags = 0x95
 uncompress(): hello, hello!
+gzread(): hello, hello!
+gzgets() after gzseek:  hello!
 inflate(): hello, hello!
 large_inflate(): OK
 after inflateSync(): hello, hello!

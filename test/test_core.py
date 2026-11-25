@@ -5186,15 +5186,14 @@ main main sees -524, -534, 72.
         self.skipTest(f'incompatible cmake version {cmake_version}')
     elif self.get_setting('STRICT'):
       self.skipTest('autoconfiguring is not compatible with STRICT')
-    zlib_archive = self.get_zlib_library(cmake=cmake, target='libz.so.1.2.5', cflags=['-fPIC'])[0]
-    zlib_basename = os.path.basename(zlib_archive)
-    shutil.copyfile(zlib_archive, zlib_basename)
+    zlib_src, zlib_archive = self.get_zlib_library(cmake=cmake, target='libz.so.1.4', cflags=['-fPIC'])
+    zlib_basename = os.path.basename(zlib_archive[0])
+    shutil.copyfile(zlib_archive[0], zlib_basename)
     # example.c uses K&R style function declarations
     self.cflags.append('-Wno-deprecated-non-prototype')
-    self.cflags.append('-I' + test_file('third_party/zlib'))
-    self.do_runf(test_file('third_party/zlib/example.c'),
+    self.do_runf(f'{zlib_src}/test/example.c',
                  read_file(test_file('core/test_zlib.out')),
-                 cflags=['-L.', zlib_archive])
+                 cflags=[f'-I{zlib_src}', zlib_basename])
 
   # @with_dylink_reversed
   # def test_dylink_bullet(self):

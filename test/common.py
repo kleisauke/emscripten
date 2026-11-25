@@ -28,7 +28,7 @@ import jsrun
 import line_endings
 from retryable_unittest import RetryableTestCase
 
-from tools import building, config, shared, utils
+from tools import building, config, ports, shared, utils
 from tools.feature_matrix import Feature
 from tools.settings import COMPILE_TIME_SETTINGS
 from tools.utils import (
@@ -1596,19 +1596,38 @@ class RunnerCore(RetryableTestCase, metaclass=RunnerMeta):
     # Work around configure-script error. TODO: remove when
     # https://github.com/emscripten-core/emscripten/issues/16908 is fixed
     self.cflags.append('-Wno-pointer-sign')
+
+    zlib_port = ports.get_port_by_name('zlib')
+    ports.Ports.fetch_project('zlib', f'https://github.com/madler/zlib/archive/refs/tags/v{zlib_port.VERSION}.tar.gz')
+    zlib_dir = ports.Ports.get_dir('zlib', f'zlib-{zlib_port.VERSION}')
+
     if cmake:
       if target == 'libz.a':
         cmake_cmd = ['cmake', '-DBUILD_SHARED_LIBS=OFF', '.']
       else:
         cmake_cmd = ['cmake', '.']
-      rtn = self.get_library(os.path.join('third_party', 'zlib'), target,
+      rtn = self.get_library(zlib_dir, target,
                              configure=cmake_cmd,
                              make=['cmake', '--build', '.', '--'],
                              make_args=[])
     else:
-      rtn = self.get_library(os.path.join('third_party', 'zlib'), target, make_args=['libz.a', target])
+      if target == 'libz.a':
+        configure_args = ['--static']
+        env_init = {}
+      else:
+        configure_args = ['--shared']
+        env_init = {
+          # Avoid linking with -lc in side modules.
+          # https://github.com/emscripten-core/emscripten/issues/16680#issuecomment-1558015445
+          'LDSHAREDLIBC': '',
+        }
+
+      rtn = self.get_library(zlib_dir, target,
+                             configure_args=configure_args,
+                             env_init=env_init,
+                             make_args=[target])
     self.cflags = old_args
-    return rtn
+    return [zlib_dir, rtn]
 
   def build_library(self, name, build_dir, generated_libs, configure, make, make_args, cache_name, env_init, native):
     """Build a library and cache the result.
@@ -1624,10 +1643,11 @@ class RunnerCore(RetryableTestCase, metaclass=RunnerMeta):
     source_dir = test_file(name.replace('_native', ''))
 
     project_dir = Path(build_dir, name)
-    if os.path.exists(project_dir):
-      shutil.rmtree(project_dir)
-    # Useful in debugging sometimes to comment this out, and two lines above
-    shutil.copytree(source_dir, project_dir)
+    if not os.path.samefile(source_dir, project_dir):
+      if os.path.exists(project_dir):
+        shutil.rmtree(project_dir)
+      # Useful in debugging sometimes to comment this out, and two lines above
+      shutil.copytree(source_dir, project_dir)
 
     generated_libs = [os.path.join(project_dir, lib) for lib in generated_libs]
 
